@@ -4,5 +4,5 @@
 PHP low-level client for Vespa. https://vespa.ai/
 
 ```
-composer require potelo/gu-payment
+composer require escavador/vespa-php
 ```
