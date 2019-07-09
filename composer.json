@@ -1,0 +1,43 @@
+{
+    "name": "escavador/vespa-php",
+    "description": "PHP Client for Vespa",
+    "keywords": ["laravel", "client", "vespa", "search", "engine", "bigdata"],
+    "license": "GPL-3.0",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Ícaro Jerry",
+            "email": "icarojerry@potelo.com.br"
+        }
+    ],
+    "require": {
+        "php": "^7.1",
+        "guzzlehttp/ringphp": "~1.0",
+        "ext-json": ">=1.3.7"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^7.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Escavador\\Vespa\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Escavador\\Vespa\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Escavador\\Vespa\\VespaServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "prefer-stable": true,
+    "minimum-stability": "dev"
+}
