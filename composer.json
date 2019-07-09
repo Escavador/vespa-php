@@ -10,6 +10,9 @@
             "email": "icarojerry@potelo.com.br"
         }
     ],
+    "support": {
+        "issues": "https://github.com/escavador/vespa-php/issues"
+    },
     "require": {
         "php": "^7.1",
         "guzzlehttp/ringphp": "~1.0",
