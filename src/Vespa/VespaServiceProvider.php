@@ -15,14 +15,14 @@ class VespaServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->publishes([
-            __DIR__.'/../config/application' => app()->basePath().'/resources/config/vendor/vespa/application',
+            __DIR__.'/../../config/application' => app()->basePath().'/resources/config/vendor/vespa/application',
         ], 'vespa-properties');
 
         $this->publishes([
-            __DIR__.'/../config/vespa.php' => app()->basePath().'/config/vespa.php',
+            __DIR__.'/../../config/vespa.php' => app()->basePath().'/config/vespa.php',
         ], 'vespa-config');
 
-        $this->mergeConfigFrom(__DIR__.'/../config/vespa.php', 'vespa');
+        $this->mergeConfigFrom(__DIR__.'/../../config/vespa.php', 'vespa');
 
         if ($this->app->runningInConsole()) {
             $this->commands([
