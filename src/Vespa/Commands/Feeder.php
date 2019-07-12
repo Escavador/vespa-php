@@ -36,7 +36,7 @@ class Feeder extends Command
      */
     protected $description = 'description here.';
 
-    public function __construct(Logger logger)
+    public function __construct()
     {
          $hosts = explode(',', trim (config('vespa.hosts')));
 
