@@ -4,7 +4,6 @@ namespace Escavador\Vespa\Commands;
 
 use Illuminate\Console\Command;
 
-
 class Feeder extends Command
 {
     /**
@@ -37,13 +36,12 @@ class Feeder extends Command
      */
     protected $description = 'description here.';
 
-    public function __construct()
+    public function __construct(Logger logger)
     {
          $hosts = explode(',', trim (config('vespa.hosts')));
 
-         // log separado
-        $this->logger = new Logger('vespa-log');
-        $this->logger->pushHandler(new StreamHandler(storage_path('logs/vespa-feeder.log')), Logger::INFO);
+        //$this->logger = new Logger('vespa-log');
+        //$this->logger->pushHandler(new StreamHandler(storage_path('logs/vespa-feeder.log')), Logger::INFO);
     }
 
     /**
