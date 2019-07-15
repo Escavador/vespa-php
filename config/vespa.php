@@ -13,6 +13,11 @@ return array(
 
     'hosts' => env('VESPA_HOSTS', 'localhost:8080'),
 
+    'model_columns' => array(
+        'index' => 'vespa_status',
+        'date' => 'vespa_last_indexed_date'
+    ),
+
     'default' => array(
         'buffer' => 1000,
         'bulk' => 1000

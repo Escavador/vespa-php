@@ -36,6 +36,8 @@ class Feeder extends Command
         parent::__construct();
         $hosts = explode(',', trim(config('vespa.hosts')));
 
+        $this->vespa_status_col = config('vespa.model_columns.status', 'vespa_status');
+        $this->vespa_date_col = config('vespa.model_columns.date', 'vespa_last_indexed_date');
         //$this->logger = new Logger('vespa-log');
         //$this->logger->pushHandler(new StreamHandler(storage_path('logs/vespa-feeder.log')), Logger::INFO);
         //yaml_parse($yaml);
@@ -79,6 +81,20 @@ class Feeder extends Command
                 $this->error("The model [$item] is not mapped at vespa config file.");
                 return;
             }
+
+            $temp_model = new $model_class;
+
+            if(!Schema::hasColumn($temp_model->getTable(), $vespa_status_col))
+            {
+                exit($this->message('error', "The model [$vespa_status_col] does not have status information on the vespa."));
+            }
+
+            if(!Schema::hasColumn($temp_model->getTable(), $vespa_date_col))
+            {
+                exit($this->message('error', "The model [$vespa_date_col] does not have status information on the vespa."));
+            }
+
+            unset($temp_model);
         }
 
         set_time_limit($time_out ?: 0);
@@ -111,9 +127,9 @@ class Feeder extends Command
     {
         return array(
             array('buffer', 'B', InputOption::VALUE_OPTIONAL, 'description here', $this->buffer),
-            array('time-out', 'T', InputOption::VALUE_OPTIONAL, 'description here', $this->time_out),
             array('dir', 'D', InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'The model dir', array()),
             array('ignore', 'I', InputOption::VALUE_OPTIONAL, 'Which models to ignore', ''),
+            array('time-out', 'T', InputOption::VALUE_OPTIONAL, 'description here', $this->time_out),
         );
     }
 
@@ -136,7 +152,31 @@ class Feeder extends Command
 
         if (!app()->environment('production'))
         {
-            $this->error($message);
+            if ($type == 'error')
+            {
+                $this->error($message);
+            } else if($type == 'info')
+            {
+                $this->info($message);
+            }
+        }
+    }
+
+    protected function getNotIndexedItems($model_class, $vespa_status_col)
+    {
+        $model_class::all()
+            ->limit($this->getDefaultBulk())
+            ->where($this->vespa_status_col, 'NOT_INDEXED');
+    }
+
+    private function process($model_class)
+    {
+        $items = $this -> getNotIndexedItems($model_class, $vespa_status_col);
+
+        if($items !== null && !$items->count())
+        {
+            $this->message('info', "[$model] already up-to-date.");
+            return false;
         }
     }
 }
