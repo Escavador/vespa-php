@@ -2,7 +2,11 @@
 
 namespace Escavador\Vespa\Commands;
 
+use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Log;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 
 class Feeder extends Command
 {
@@ -11,23 +15,7 @@ class Feeder extends Command
      *
      * @var string
      */
-    protected $signature = 'vespa:feeder
-                            {--buffer= : description here}
-                            {--time-out= : description here}
-    ';
-
-    /**
-     * The console command name.
-     *
-     * @var string
-     */
-    protected $name = 'feeder';
-
-    protected $BUFFER = 8000;
-
-    protected $ITENS_BULK = 8000;
-
-    protected $logger;
+    protected $name = 'vespa:feeder';
 
     /**
      * The console command description.
@@ -36,12 +24,21 @@ class Feeder extends Command
      */
     protected $description = 'description here.';
 
+    protected $buffer;
+
+    protected $time_out;
+
+    protected $logger;
+
+
     public function __construct()
     {
-         $hosts = explode(',', trim (config('vespa.hosts')));
+        parent::__construct();
+        $hosts = explode(',', trim(config('vespa.hosts')));
 
         //$this->logger = new Logger('vespa-log');
         //$this->logger->pushHandler(new StreamHandler(storage_path('logs/vespa-feeder.log')), Logger::INFO);
+        //yaml_parse($yaml);
     }
 
     /**
@@ -51,24 +48,40 @@ class Feeder extends Command
      */
     public function handle()
     {
+        $model = $this->argument('model');
+        $buffer = $this->option('buffer');
+        $time_out = $this->option('time-out');
 
-        $models = $this->argument('models');
+        if (!is_array($model))
+        {
+            $this->error('The [model] argument has to be an array.');
+            return;
+        }
 
-        $buffer = $this->argument('buffer');
-        $time_out = $this->argument('time-out');
-        $model = $this->argument('time-out');
-
-        if (!ctype_digit($buffer)) {
+        if ($buffer !== null && !ctype_digit($buffer))
+        {
             $this->error('The [buffer] argument has to be a number.');
             return;
         }
 
-        if (!ctype_digit($time_out)) {
-            $this->error('The [time_out] argument has to be a number.');
+        if ($time_out !== null && !ctype_digit($time_out))
+        {
+            $this->error('The [time-out] argument has to be a number.');
             return;
         }
 
-        set_time_limit( $time_out?: 0 );
+        $mapped_models = config('vespa.mapped_models');
+
+        foreach ($model as $item)
+        {
+            if (!array_key_exists($item, $mapped_models))
+            {
+                $this->error("The model [$item] is not mapped at vespa config file.");
+                return;
+            }
+        }
+
+        set_time_limit($time_out ?: 0);
 
         $this->message('info', '....started.');
         $start_time = Carbon::now();
@@ -84,8 +97,46 @@ class Feeder extends Command
      */
     protected function getArguments()
     {
-        return [
-            ['models', InputArgument::IS_ARRAY, 'description here'],
-        ];
+        return array (
+            array('model', InputArgument::IS_ARRAY, 'Which models to include', array()),
+        );
+    }
+
+    /**
+     * Get the console command options.
+     *
+     * @return array
+     */
+    protected function getOptions()
+    {
+        return array(
+            array('buffer', 'B', InputOption::VALUE_OPTIONAL, 'description here', $this->buffer),
+            array('time-out', 'T', InputOption::VALUE_OPTIONAL, 'description here', $this->time_out),
+            array('dir', 'D', InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'The model dir', array()),
+            array('ignore', 'I', InputOption::VALUE_OPTIONAL, 'Which models to ignore', ''),
+        );
+    }
+
+    protected function getDefaultBuffer()
+    {
+        return config('vespa.default.buffer', 0);
+    }
+
+    protected function getDefaultBulk()
+    {
+        return config('vespa.default.bulk', 0);
+    }
+
+    protected function message($type, $message)
+    {
+        if ($type == 'error')
+        {
+            Log::error($message);
+        }
+
+        if (!app()->environment('production'))
+        {
+            $this->error($message);
+        }
     }
 }

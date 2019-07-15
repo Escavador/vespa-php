@@ -15,7 +15,7 @@ class VespaServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->publishes([
-            __DIR__.'/../../config/application' => app()->basePath().'/resources/config/vendor/vespa/application',
+            __DIR__.'/../../config/src/main/application' => app()->basePath().'/resources/config/vendor/vespa/src/main/application',
         ], 'vespa-properties');
 
         $this->publishes([
