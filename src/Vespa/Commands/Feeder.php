@@ -3,7 +3,11 @@
 namespace Escavador\Vespa\Commands;
 
 use Carbon\Carbon;
+use Escavador\Vespa\Common\EnumModelStatusVespa;
 use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Schema;
 use Log;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
@@ -36,8 +40,9 @@ class Feeder extends Command
         parent::__construct();
         $hosts = explode(',', trim(config('vespa.hosts')));
 
-        $this->vespa_status_col = config('vespa.model_columns.status', 'vespa_status');
-        $this->vespa_date_col = config('vespa.model_columns.date', 'vespa_last_indexed_date');
+        $this->vespa_status_column = config('vespa.model_columns.status', 'vespa_status');
+        $this->vespa_date_column = config('vespa.model_columns.date', 'vespa_last_indexed_date');
+
         //$this->logger = new Logger('vespa-log');
         //$this->logger->pushHandler(new StreamHandler(storage_path('logs/vespa-feeder.log')), Logger::INFO);
         //yaml_parse($yaml);
@@ -47,14 +52,17 @@ class Feeder extends Command
      * Execute the console command.
      *
      * @return void
-     */
+    */
     public function handle()
     {
-        $model = $this->argument('model');
+        $this->message('info', '....started.');
+        $start_time = Carbon::now();
+
+        $models = $this->argument('model');
         $buffer = $this->option('buffer');
         $time_out = $this->option('time-out');
 
-        if (!is_array($model))
+        if (!is_array($models))
         {
             $this->error('The [model] argument has to be an array.');
             return;
@@ -73,8 +81,9 @@ class Feeder extends Command
         }
 
         $mapped_models = config('vespa.mapped_models');
+        set_time_limit($time_out ?: 0);
 
-        foreach ($model as $item)
+        foreach ($models as $item)
         {
             if (!array_key_exists($item, $mapped_models))
             {
@@ -82,28 +91,31 @@ class Feeder extends Command
                 return;
             }
 
-            $temp_model = new $model_class;
+            $temp_model = new $mapped_models[$item];
 
-            if(!Schema::hasColumn($temp_model->getTable(), $vespa_status_col))
+            if (!Schema::hasColumn($temp_model->getTable(), $this->vespa_status_column))
             {
-                exit($this->message('error', "The model [$vespa_status_col] does not have status information on the vespa."));
+                exit($this->message('error', "The model [$this->vespa_status_column] does not have status information on the vespa."));
             }
 
-            if(!Schema::hasColumn($temp_model->getTable(), $vespa_date_col))
+            if (!Schema::hasColumn($temp_model->getTable(), $this->vespa_date_column))
             {
-                exit($this->message('error', "The model [$vespa_date_col] does not have status information on the vespa."));
+                exit($this->message('error', "The model [$this->vespa_date_column] does not have status information on the vespa."));
+            }
+
+            //TODO: make this async
+            try
+            {
+                $this->process($mapped_models[$item]);
+                $this->message('info', '... finished.');
+            }
+            catch (\Exception $e)
+            {
+                $this->message('error', '... fail.');
             }
 
             unset($temp_model);
         }
-
-        set_time_limit($time_out ?: 0);
-
-        $this->message('info', '....started.');
-        $start_time = Carbon::now();
-
-
-        $this->message('info', '... finished.');
     }
 
     /**
@@ -125,7 +137,7 @@ class Feeder extends Command
      */
     protected function getOptions()
     {
-        return array(
+        return array (
             array('buffer', 'B', InputOption::VALUE_OPTIONAL, 'description here', $this->buffer),
             array('dir', 'D', InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'The model dir', array()),
             array('ignore', 'I', InputOption::VALUE_OPTIONAL, 'Which models to ignore', ''),
@@ -145,38 +157,43 @@ class Feeder extends Command
 
     protected function message($type, $message)
     {
-        if ($type == 'error')
-        {
+        if ($type == 'error') {
             Log::error($message);
         }
 
-        if (!app()->environment('production'))
-        {
-            if ($type == 'error')
-            {
+        if (!app()->environment('production')) {
+            if ($type == 'error') {
                 $this->error($message);
-            } else if($type == 'info')
-            {
+            } else if ($type == 'info') {
                 $this->info($message);
             }
         }
     }
 
-    protected function getNotIndexedItems($model_class, $vespa_status_col)
+    protected function getNotIndexedItems($model_class)
     {
-        $model_class::all()
-            ->limit($this->getDefaultBulk())
-            ->where($this->vespa_status_col, 'NOT_INDEXED');
+        return $model_class::take($this->getDefaultBulk())
+                            ->where($this->vespa_status_column, EnumModelStatusVespa::NOT_INDEXED);
     }
 
     private function process($model_class)
     {
-        $items = $this -> getNotIndexedItems($model_class, $vespa_status_col);
+        $items = $this->getNotIndexedItems($model_class);
 
-        if($items !== null && !$items->count())
+        if ($items !== null && !$items->count())
         {
-            $this->message('info', "[$model] already up-to-date.");
+            $this->feeder->message('info', "[$model] already up-to-date.");
             return false;
         }
+
+        foreach ($items as $item) {
+            //Records on vespa
+            //TODO
+
+            $item[$this->vespa_status_column] = EnumModelStatusVespa::INDEXED;
+            //$item->save();
+        }
+
+        $this->message('info', 'done');
     }
 }
