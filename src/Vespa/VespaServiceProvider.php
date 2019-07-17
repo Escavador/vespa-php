@@ -4,7 +4,8 @@ namespace Escavador\Vespa;
 
 use Illuminate\Support\ServiceProvider;
 use Escavador\Vespa\Commands\FeedCommand;
-use Escavador\Vespa\Migrations\VespaMigrateMakeCommand;
+use Escavador\Vespa\Commands\VespaMigrateMakeCommand;
+use Escavador\Vespa\Migrations\VespaMigrationCreator;
 
 class VespaServiceProvider extends ServiceProvider
 {
@@ -40,6 +41,20 @@ class VespaServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        $this->registerCreator();
     }
+
+
+    /**
+     * Register the migration creator.
+     *
+     * @return void
+     */
+    protected function registerCreator()
+    {
+        $this->app->singleton('vespa.migration.creator', function ($app) {
+            return new VespaMigrationCreator($app['files']);
+        });
+    }
+
 }
