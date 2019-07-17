@@ -5,6 +5,7 @@ namespace Escavador\Vespa\Commands;
 use Escavador\Vespa\Migrations\MigrationCreator;
 use Illuminate\Database\Console\Migrations\MigrateMakeCommand as IlluminateMigrateMakeCommand;
 use Illuminate\Support\Composer;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class MigrateMakeCommand extends IlluminateMigrateMakeCommand
