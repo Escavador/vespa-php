@@ -49,9 +49,10 @@ class MigrateMakeCommand extends IlluminateMigrateMakeCommand
     {
         $table = $this->input->getArgument('table');
 
-        if(Schema::hasTable($table))
+        if(!Schema::hasTable($table))
         {
             $this->line("<error>The table ".$table." does not exist.</error>");
+            return;
         }
         
         $name = 'add_vespa_columns_in_'. strtolower($table);
