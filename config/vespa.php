@@ -19,8 +19,7 @@ return array(
     ),
 
     'default' => array(
-        'buffer' => 1000,
-        'bulk' => 1000
+        'bulk' => 100
     ),
 
     'mapped_models' => (
