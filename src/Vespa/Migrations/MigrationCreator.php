@@ -2,13 +2,13 @@
 
 namespace Escavador\Vespa\Migrations;
 
-use Illuminate\Database\Migrations\MigrationCreator;
+use Illuminate\Database\Migrations\MigrationCreator as IlluminateMigrationCreator;
 use Closure;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Illuminate\Filesystem\Filesystem;
 
-class VespaMigrationCreator extends  MigrationCreator
+class MigrationCreator extends  IlluminateMigrationCreator
 {
 
     /**
@@ -20,7 +20,6 @@ class VespaMigrationCreator extends  MigrationCreator
      */
     protected function getStub($table, $create)
     {
-        dd(__DIR__."/stubs/blank.stub");
         return $this->files->get(__DIR__."/stubs/blank.stub");
     }
 

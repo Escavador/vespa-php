@@ -2,10 +2,12 @@
 
 namespace Escavador\Vespa\Commands;
 
-use Illuminate\Database\Console\Migrations\MigrateMakeCommand;
+use Escavador\Vespa\Migrations\MigrationCreator;
+use Illuminate\Database\Console\Migrations\MigrateMakeCommand as IlluminateMigrateMakeCommand;
+use Illuminate\Support\Composer;
 use Illuminate\Support\Str;
 
-class VespaMigrateMakeCommand extends MigrateMakeCommand
+class MigrateMakeCommand extends IlluminateMigrateMakeCommand
 {
 
     /**
@@ -24,6 +26,18 @@ class VespaMigrateMakeCommand extends MigrateMakeCommand
      * @var string
      */
     protected $description = 'Create a new basic vespa migration file';
+
+    /**
+     * Create a new migration install command instance.
+     *
+     * @param  \Illuminate\Database\Migrations\VespaMigrationCreator  $creator
+     * @param  \Illuminate\Support\Composer  $composer
+     * @return void
+     */
+    public function __construct(VespaMigrationCreator $creator, Composer $composer)
+    {
+        parent::__construct($creator, $composer);
+    }
 
     /**
      * Execute the console command.

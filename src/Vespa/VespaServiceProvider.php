@@ -4,8 +4,8 @@ namespace Escavador\Vespa;
 
 use Illuminate\Support\ServiceProvider;
 use Escavador\Vespa\Commands\FeedCommand;
-use Escavador\Vespa\Commands\VespaMigrateMakeCommand;
-use Escavador\Vespa\Migrations\VespaMigrationCreator;
+use Escavador\Vespa\Commands\MigrateMakeCommand;
+use Escavador\Vespa\Migrations\MigrationCreator;
 
 class VespaServiceProvider extends ServiceProvider
 {
@@ -29,7 +29,7 @@ class VespaServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 FeedCommand::class,
-                VespaMigrateMakeCommand::class,
+                MigrateMakeCommand::class,
             ]);
         }
     }
@@ -42,6 +42,7 @@ class VespaServiceProvider extends ServiceProvider
     public function register()
     {
         $this->registerCreator();
+        $this->registerMigrateMakeCommand();
     }
 
 
@@ -53,8 +54,35 @@ class VespaServiceProvider extends ServiceProvider
     protected function registerCreator()
     {
         $this->app->singleton('vespa.migration.creator', function ($app) {
-            return new VespaMigrationCreator($app['files']);
+            return new MigrationCreator($app['files']);
         });
     }
 
+    /**
+     * Register the command.
+     *
+     * @return void
+     */
+    protected function registerMigrateMakeCommand()
+    {
+        $this->app->singleton('vespa.command.migrate.make', function ($app) {
+            $creator = $app['vespa.migration.creator'];
+
+            $composer = $app['composer'];
+
+            return new MigrateMakeCommand($creator, $composer);
+        });
+    }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array
+     */
+    public function provides()
+    {
+        return [
+            'vespa.migration.creator', 'vespa.command.migrate.make'
+        ];
+    }
 }
