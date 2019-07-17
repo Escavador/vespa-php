@@ -22,7 +22,7 @@ return array(
         'bulk' => 100
     ),
 
-    'mapped_models' => (
+    'mapped_models' => array(
     	//
     ),
 

@@ -4,6 +4,7 @@ namespace Escavador\Vespa;
 
 use Illuminate\Support\ServiceProvider;
 use Escavador\Vespa\Commands\FeedCommand;
+use Escavador\Vespa\Migrations\VespaMigrateMakeCommand;
 
 class VespaServiceProvider extends ServiceProvider
 {
@@ -27,6 +28,7 @@ class VespaServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 FeedCommand::class,
+                VespaMigrateMakeCommand::class,
             ]);
         }
     }

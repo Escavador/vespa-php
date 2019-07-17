@@ -1,10 +1,10 @@
- <?php
+<?php
 
 namespace Escavador\Vespa\Migrations;
 
 use Illuminate\Database\Console\Migrations\MigrateMakeCommand;
 
-class VespaServiceProvider extends MigrateMakeCommand
+class VespaMigrateMakeCommand extends MigrateMakeCommand
 {
 
 	/**
