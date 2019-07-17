@@ -40,4 +40,16 @@ class MigrationCreator extends  IlluminateMigrationCreator
 
         return $stub;
     }
+
+      /**
+     * Get the full path to the migration.
+     *
+     * @param  string  $name
+     * @param  string  $path
+     * @return string
+     */
+    protected function getPath($name, $path)
+    {
+        return $path.'/'.$this->getDatePrefix().'_'.$name.'.php';
+    }
 }

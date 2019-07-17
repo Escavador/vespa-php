@@ -15,7 +15,7 @@ class MigrateMakeCommand extends IlluminateMigrateMakeCommand
      *
      * @var string
      */
-    protected $signature = 'vespa:migration {name : The name of the migration}
+    protected $signature = 'vespa:migration 
         {table : The table to migrate}
         {--path= : The location where the migration file should be created}
         {--realpath : Indicate any provided migration file paths are pre-resolved absolute paths}';
@@ -46,9 +46,14 @@ class MigrateMakeCommand extends IlluminateMigrateMakeCommand
      */
     public function handle()
     {
-        $name = Str::snake(trim($this->input->getArgument('name')));
-
         $table = $this->input->getArgument('table');
+
+        if(Schema::hasTable($table))
+        {
+            $this->line("<error>The table ".$table." does not exist.</error>");
+        }
+        
+        $name = 'add_vespa_columns_in_'. strtolower($table);
 
         $this->writeMigration($name, $table, false);
 
