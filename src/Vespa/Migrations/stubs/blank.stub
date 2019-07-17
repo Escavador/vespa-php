@@ -1,0 +1,47 @@
+<?php
+
+use Escavador\Vespa\Common\EnumModelStatusVespa;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
+
+class AddColunasVespaEmJuridicoDiarioOficial extends Migration
+{
+    protected $model_name = 'juridico_diario_oficial';
+    protected $vespa_last_indexed_date = 'vespa_data_ultima_indexacao';
+    protected $comment_vespa_last_indexed_date = 'Última data que o Vespa indexou o documento';
+    protected $vespa_status = 'vespa_status';
+    protected $comment_vespa_status = 'Estado atual da indexação do documento no Vespa';
+
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::table($this->model_name, function (Blueprint $table) {
+            $table->enum($this->vespa_status, array(EnumModelStatusVespa::NOT_INDEXED, EnumModelStatusVespa::INDEXED))
+                ->default(EnumModelStatusVespa::NOT_INDEXED)
+                ->comment($this->comment_vespa_last_indexed_date);
+
+            $table->dateTime($this->vespa_last_indexed_date)
+                  ->nullable()
+                  ->after($this->vespa_status)
+                  ->comment($this->comment_vespa_status);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::table($this->model_name, function (Blueprint $table) {
+            $table->dropColumn($this->vespa_last_indexed_date);
+            $table->dropColumn($this->vespa_status);
+        });
+    }
+}
