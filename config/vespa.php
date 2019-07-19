@@ -19,7 +19,8 @@ return array(
     ),
 
     'default' => array(
-        'bulk' => 100
+        'bulk' => 100,
+        'set_language' => 'en-US'
     ),
 
     'mapped_models' => array(
