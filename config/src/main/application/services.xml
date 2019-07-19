@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<services version="1.0">
+
+  <container id="default" version="1.0">
+    <search></search>
+    <document-api></document-api>
+    <nodes>
+      <node hostalias="node-example"></node>
+    </nodes>
+  </container>
+
+  <content id="your_document" version="1.0">
+    <redundancy>1</redundancy>
+    <search>
+      <visibility-delay>1.0</visibility-delay>
+    </search>
+    <documents>
+      <document mode="index" type="your_document"></document>
+    </documents>
+    <nodes>
+      <node hostalias="node-example" distribution-key="0"></node>
+    </nodes>
+    <engine>
+      <proton>
+        <searchable-copies>2</searchable-copies>
+      </proton>
+    </engine>
+  </content>
+
+</services>
