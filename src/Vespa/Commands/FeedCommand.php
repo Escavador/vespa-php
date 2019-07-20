@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Schema;
 use Log;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
+use GuzzleHttp\Client;
 
 class FeedCommand extends Command
 {
@@ -30,6 +31,8 @@ class FeedCommand extends Command
 
     protected $bulk;
 
+    protected $host;
+
     protected $time_out;
 
     protected $logger;
@@ -38,8 +41,7 @@ class FeedCommand extends Command
     public function __construct()
     {
         parent::__construct();
-        $hosts = explode(',', trim(config('vespa.hosts')));
-
+        $this->host = explode(',', trim(config('vespa.host')));
         $this->vespa_status_column = config('vespa.model_columns.status', 'vespa_status');
         $this->vespa_date_column = config('vespa.model_columns.date', 'vespa_last_indexed_date');
         $this->mapped_models = config('vespa.mapped_models');
@@ -47,7 +49,6 @@ class FeedCommand extends Command
 
         //$this->logger = new Logger('vespa-log');
         //$this->logger->pushHandler(new StreamHandler(storage_path('logs/vespa-feeder.log')), Logger::INFO);
-        //yaml_parse($yaml);
     }
 
     /**

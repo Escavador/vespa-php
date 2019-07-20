@@ -11,7 +11,7 @@ return array(
     |
     */
 
-    'hosts' => env('VESPA_HOSTS', 'localhost:8080'),
+    'host' => env('VESPA_HOST', 'localhost:8080'),
 
     'model_columns' => array(
         'index' => 'vespa_status',
