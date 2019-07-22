@@ -4,6 +4,7 @@ namespace Escavador\Vespa\Commands;
 
 use Carbon\Carbon;
 use Escavador\Vespa\Common\EnumModelStatusVespa;
+use Escavador\Vespa\Models\SimpleClient;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Event;
@@ -37,15 +38,18 @@ class FeedCommand extends Command
 
     protected $logger;
 
+    protected $vespa_client;
 
     public function __construct()
     {
         parent::__construct();
-        $this->host = explode(',', trim(config('vespa.host')));
+        $this->host = trim(config('vespa.host'));
         $this->vespa_status_column = config('vespa.model_columns.status', 'vespa_status');
         $this->vespa_date_column = config('vespa.model_columns.date', 'vespa_last_indexed_date');
         $this->mapped_models = config('vespa.mapped_models');
         $this->bulk = $this->getBulkDefault();
+
+        $this->vespa_client = new SimpleClient();
 
         //$this->logger = new Logger('vespa-log');
         //$this->logger->pushHandler(new StreamHandler(storage_path('logs/vespa-feeder.log')), Logger::INFO);
@@ -99,16 +103,16 @@ class FeedCommand extends Command
 
         set_time_limit($time_out ?: 0);
 
-        foreach ($models as $item)
+        foreach ($models as $model)
         {
-            if (!array_key_exists($item, $this->mapped_models))
+            if (!array_key_exists($model, $this->mapped_models))
             {
-                $this->error("The model [$item] is not mapped at vespa config file.");
+                $this->error("The model [$model] is not mapped at vespa config file.");
                 //go to next model
                 continue;
             }
 
-            $temp_model = new $this->mapped_models[$item];
+            $temp_model = new $this->mapped_models[$model];
 
             if (!Schema::hasColumn($temp_model->getTable(), $this->vespa_status_column))
             {
@@ -123,7 +127,7 @@ class FeedCommand extends Command
             //TODO: make this async
             try
             {
-                $this->process($item);
+                $this->process($model);
                 $this->message('info', 'The vespa was fed.');
             }
             catch (\Exception $e)
@@ -182,17 +186,10 @@ class FeedCommand extends Command
         }
     }
 
-    protected function getNotIndexedItems($model_class)
-    {
-        return $model_class::take($this->bulk)
-                            ->where($this->vespa_status_column, EnumModelStatusVespa::NOT_INDEXED)
-                            ->get();
-    }
-
     private function process($model)
     {
         $model_class = $this->mapped_models[$model];
-        $items = $this->getNotIndexedItems($model_class);
+        $items = $model::getNotIndexedItems($this->bulk);
 
         if ($items !== null && !$items->count())
         {
@@ -204,10 +201,9 @@ class FeedCommand extends Command
 
         foreach ($items as $item) {
             //Records on vespa
-            //TODO
+            $this->vespa_client->sendDocument($item);
 
-
-            //Update model's vespa info
+            //Update model's vespa info in database
             $item[$this->vespa_status_column] = EnumModelStatusVespa::INDEXED;
             $item[$this->vespa_date_column] = Carbon::now();
             $item->save();

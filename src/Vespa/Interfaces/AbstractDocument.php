@@ -2,9 +2,12 @@
 
 namespace Escavador\Vespa\Interfaces;
 
-abstract class AbstractDocument
+interface class AbstractDocument
 {
 
-	abstract protected function insertMany($documents);
-
+	public function getVespaNamespace();
+	public function getVespaDocumentType();
+	public function getVespaDocumentId();
+	public function getVespaDocumentFields();
+	public static function getVespaDocumentsToIndex(int $limit);
 }
