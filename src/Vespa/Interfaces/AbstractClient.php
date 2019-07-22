@@ -2,12 +2,12 @@
 
 namespace Escavador\Vespa\Interfaces;
 
-use Escavador\Vespa\AbstractDocument;
+use Escavador\Vespa\Interfaces\AbstractDocument;
 
 abstract class AbstractClient
 {
 
-	abstract public function sendDocuments(array AbstractDocument $documents);
+	abstract public function sendDocuments(array $documents);
 	abstract public function sendDocument(AbstractDocument $document);
 
 }

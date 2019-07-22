@@ -2,12 +2,13 @@
 
 namespace Escavador\Vespa\Interfaces;
 
-interface class AbstractDocument
+interface AbstractDocument
 {
 
 	public function getVespaNamespace();
 	public function getVespaDocumentType();
 	public function getVespaDocumentId();
 	public function getVespaDocumentFields();
-	public static function getVespaDocumentsToIndex(int $limit);
+    public static function getVespaDocumentTable();
+    public static function getVespaDocumentsToIndex(int $limit);
 }

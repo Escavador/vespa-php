@@ -19,7 +19,7 @@ return array(
     ),
 
     'default' => array(
-        'bulk' => 100,
+        'limit' => 100,
         'set_language' => 'en-US'
     ),
 

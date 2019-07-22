@@ -4,6 +4,7 @@ namespace Escavador\Vespa\Models;
 
 
 use Escavador\Vespa\Interfaces\AbstractClient;
+use Escavador\Vespa\Interfaces\AbstractDocument;
 use GuzzleHttp\Client;
 
 
@@ -42,6 +43,8 @@ class SimpleClient extends AbstractClient
         {
             $content = $response->getBody()->getContents();
             $content = json_decode($content);
+
+            return $document;
         }
         else
         {
@@ -49,14 +52,16 @@ class SimpleClient extends AbstractClient
         }
 	}
 
-	public function sendDocuments(array AbstractDocument $documents)
+	public function sendDocuments(array $documents)
 	{
-		
-		$url = $this->host . '/document/v1/';
-
+        $indexed = array();
 		foreach ($documents as $document)
 		{
 			$this->sendDocument($document);
+
+            $indexed[] = $document;
 		}
+
+		return $indexed;
 	}
 }

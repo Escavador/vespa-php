@@ -30,7 +30,7 @@ class FeedCommand extends Command
      */
     protected $description = 'Feed the vespa with models.';
 
-    protected $bulk;
+    protected $limit;
 
     protected $host;
 
@@ -47,9 +47,9 @@ class FeedCommand extends Command
         $this->vespa_status_column = config('vespa.model_columns.status', 'vespa_status');
         $this->vespa_date_column = config('vespa.model_columns.date', 'vespa_last_indexed_date');
         $this->mapped_models = config('vespa.mapped_models');
-        $this->bulk = $this->getBulkDefault();
+        $this->limit = $this->getLimitDefault();
 
-        $this->vespa_client = new SimpleClient();
+        $this->vespa_client = new SimpleClient($this->host);
 
         //$this->logger = new Logger('vespa-log');
         //$this->logger->pushHandler(new StreamHandler(storage_path('logs/vespa-feeder.log')), Logger::INFO);
@@ -66,7 +66,7 @@ class FeedCommand extends Command
         $start_time = Carbon::now();
 
         $models = $this->argument('model');
-        $bulk = $this->option('bulk');
+        $limit = $this->option('limit');
         $time_out = $this->option('time-out');
 
         if (!is_array($models))
@@ -75,19 +75,19 @@ class FeedCommand extends Command
             return;
         }
 
-        if (!is_numeric($bulk))
+        if (!is_numeric($limit))
         {
-            $this->error('The [bulk] argument has to be a number.');
+            $this->error('The [limit] argument has to be a number.');
             return;
         }
 
-        if ($bulk <= 0)
+        if ($limit <= 0)
         {
-            $this->error('The [bulk] argument has to be greater than 0.');
+            $this->error('The [limit] argument has to be greater than 0.');
             return;
         }
 
-        $this->bulk = $bulk;
+        $this->limit = $limit;
 
         if ($time_out !== null && !is_numeric($time_out))
         {
@@ -112,14 +112,14 @@ class FeedCommand extends Command
                 continue;
             }
 
-            $temp_model = new $this->mapped_models[$model];
+            $table_name = ($this->mapped_models[$model])::getVespaDocumentTable();
 
-            if (!Schema::hasColumn($temp_model->getTable(), $this->vespa_status_column))
+            if (!Schema::hasColumn($table_name, $this->vespa_status_column))
             {
                 exit($this->message('error', "The model [$this->vespa_status_column] does not have status information on the vespa."));
             }
 
-            if (!Schema::hasColumn($temp_model->getTable(), $this->vespa_date_column))
+            if (!Schema::hasColumn($table_name, $this->vespa_date_column))
             {
                 exit($this->message('error', "The model [$this->vespa_date_column] does not have date information on the vespa."));
             }
@@ -139,9 +139,9 @@ class FeedCommand extends Command
         }
     }
 
-    protected function getBulkDefault()
+    protected function getLimitDefault()
     {
-        return config('vespa.default.bulk', 1);
+        return config('vespa.default.limit', 1);
     }
 
     /**
@@ -164,7 +164,7 @@ class FeedCommand extends Command
     protected function getOptions()
     {
         return array (
-            array('bulk', 'B', InputOption::VALUE_OPTIONAL, 'description here', $this->getBulkDefault()),
+            array('limit', 'L', InputOption::VALUE_OPTIONAL, 'description here', $this->getLimitDefault()),
             array('dir', 'D', InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'The model dir', array()),
             array('ignore', 'I', InputOption::VALUE_OPTIONAL, 'Which models to ignore', ''),
             array('time-out', 'T', InputOption::VALUE_OPTIONAL, 'description here', $this->time_out),
@@ -189,20 +189,22 @@ class FeedCommand extends Command
     private function process($model)
     {
         $model_class = $this->mapped_models[$model];
-        $items = $model::getNotIndexedItems($this->bulk);
+        $documents = $model_class::getVespaDocumentsToIndex($this->limit);
 
-        if ($items !== null && !$items->count())
+        dd($documents);
+
+        if ($documents !== null && !$documents->count())
         {
             $this->message('info', "[$model] already up-to-date.");
             return false;
         }
 
-        $this->message('info', "Feed vespa with [{$items->count()}] [$model].");
+        $this->message('info', "Feed vespa with [{$documents->count()}] [$model].");
 
-        foreach ($items as $item) {
-            //Records on vespa
-            $this->vespa_client->sendDocument($item);
+        //Records on vespa
+        $indexed = $this->vespa_client->sendDocuments($documents);
 
+        foreach ($indexed as $item) {
             //Update model's vespa info in database
             $item[$this->vespa_status_column] = EnumModelStatusVespa::INDEXED;
             $item[$this->vespa_date_column] = Carbon::now();
