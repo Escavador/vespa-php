@@ -190,28 +190,23 @@ class FeedCommand extends Command
     {
         $model_class = $this->mapped_models[$model];
         $documents = $model_class::getVespaDocumentsToIndex($this->limit);
+        $count_docs = count($documents);
 
-        dd($documents);
-
-        if ($documents !== null && !$documents->count())
+        if ($documents !== null && !$count_docs)
         {
             $this->message('info', "[$model] already up-to-date.");
             return false;
         }
 
-        $this->message('info', "Feed vespa with [{$documents->count()}] [$model].");
+        $this->message('info', "Feed vespa with [$count_docs] [$model].");
 
         //Records on vespa
         $indexed = $this->vespa_client->sendDocuments($documents);
 
-        foreach ($indexed as $item) {
-            //Update model's vespa info in database
-            $item[$this->vespa_status_column] = EnumModelStatusVespa::INDEXED;
-            $item[$this->vespa_date_column] = Carbon::now();
-            $item->save();
-        }
+        //Update model's vespa info in database
+        $model_class::markAsIndexed($indexed);
 
-        $this->message('info', "[$model] was done.");
+        $this->message('info', " $count_docs/". count($indexed)." [$model] was done.");
         return true;
     }
 }

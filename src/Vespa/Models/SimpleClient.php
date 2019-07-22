@@ -6,6 +6,7 @@ namespace Escavador\Vespa\Models;
 use Escavador\Vespa\Interfaces\AbstractClient;
 use Escavador\Vespa\Interfaces\AbstractDocument;
 use GuzzleHttp\Client;
+use GuzzleHttp\RequestOptions;
 
 
 /**
@@ -29,15 +30,19 @@ class SimpleClient extends AbstractClient
 
     public function sendDocument(AbstractDocument $document)
 	{
-		
-		$url = $this->host . '/document/v1/';
+        $url = $this->host . "/document/v1/{$document->getVespaNamespace()}/{$document->getVespaDocumentType()}/docid/{$document->getVespaDocumentId()}";
 
-		$response = $client->request('POST', $url."/{$document->getVespaNamespace()}/{$document->getVespaDocumentType()}/docid/{$document->getVespaDocumentId()}" , [
-            'headers' => [
-                'Content-Type' => 'application/json',
-            ],
-            'fields' => $document->getVespaDocumentFields()
-        ]);
+        try
+        {
+            $response = $this->client->post($url,  [
+                RequestOptions::JSON => array('fields' => $document->getVespaDocumentFields())
+            ]);
+
+        } catch (\Exception $ex)
+        {
+            //TODO Custom Exception
+    		throw new Exception("Error Processing Request");
+        }
 
         if($response->getStatusCode() == 200)
         {
@@ -48,6 +53,7 @@ class SimpleClient extends AbstractClient
         }
         else
         {
+            //TODO Custom Exception
     		throw new Exception("Error Processing Request", $response->getStatusCode());
         }
 	}
