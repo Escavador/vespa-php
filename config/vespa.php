@@ -13,19 +13,26 @@ return array(
 
     'host' => env('VESPA_HOST', 'localhost:8080'),
 
-    'model_columns' => array(
-        'index' => 'vespa_status',
+    'model_columns' => [
+        'status' => 'vespa_status',
         'date' => 'vespa_last_indexed_date'
-    ),
+    ],
 
     'default' => array(
         'limit' => 100,
         'set_language' => 'en-US'
     ),
 
-    'mapped_models' => array(
-    	//
-    ),
+	'namespace' => [
+        'foo' => [
+            'document' => [
+                'bar' => [
+                    'class' => '',
+                    'table' => ''
+                ]
+            ]
+        ]
+    ]
 
     'stop_words' => []
 );

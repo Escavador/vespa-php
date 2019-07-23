@@ -165,9 +165,12 @@ class FeedCommand extends Command
     {
         return array (
             array('limit', 'L', InputOption::VALUE_OPTIONAL, 'description here', $this->getLimitDefault()),
-            array('dir', 'D', InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'The model dir', array()),
-            array('ignore', 'I', InputOption::VALUE_OPTIONAL, 'Which models to ignore', ''),
             array('time-out', 'T', InputOption::VALUE_OPTIONAL, 'description here', $this->time_out),
+
+            //TODO arguments
+            //array('dir', 'D', InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'The model dir', array()),
+            //array('ignore', 'I', InputOption::VALUE_OPTIONAL, 'Which models to ignore', ''),
+            //array('bulk', 'B', InputOption::VALUE_OPTIONAL, 'description here', 0),
         );
     }
 
@@ -190,6 +193,7 @@ class FeedCommand extends Command
     {
         $model_class = $this->mapped_models[$model];
         $documents = $model_class::getVespaDocumentsToIndex($this->limit);
+
         $count_docs = count($documents);
 
         if ($documents !== null && !$count_docs)
@@ -199,7 +203,6 @@ class FeedCommand extends Command
         }
 
         $this->message('info', "Feed vespa with [$count_docs] [$model].");
-
         //Records on vespa
         $indexed = $this->vespa_client->sendDocuments($documents);
 

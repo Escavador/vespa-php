@@ -19,12 +19,11 @@ use GuzzleHttp\RequestOptions;
 class SimpleClient extends AbstractClient
 {
 
-	protected $host;
 	protected $client;
 
-	public function __construct($host)
+	public function __construct($host=null)
     {
-    	$this->host = $host;
+    	 parent::__construct($host);
     	$this->client = new Client();
     } 
 
@@ -41,7 +40,7 @@ class SimpleClient extends AbstractClient
         } catch (\Exception $ex)
         {
             //TODO Custom Exception
-    		throw new Exception("Error Processing Request");
+    		throw new \Exception("Error Processing Request");
         }
 
         if($response->getStatusCode() == 200)
@@ -58,7 +57,7 @@ class SimpleClient extends AbstractClient
         }
 	}
 
-	public function sendDocuments(array $documents)
+	public function sendDocuments($documents)
 	{
         $indexed = array();
 		foreach ($documents as $document)
