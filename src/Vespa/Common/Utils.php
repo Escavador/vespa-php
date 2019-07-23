@@ -18,23 +18,4 @@ class Utils
         //TODO
         return null;
     }
-
-
-    public static function loadDocuments()
-    {
-        $namespaces_data = config('vespa.namespace', []);
-        dd($namespaces_data);
-
-        $documents = [];
-        
-        foreach ($namespaces as $namespace => $values)
-        {
-            foreach ($values["document"] as $document)
-            {
-                $documents[] = new Document($key, $document['type'], $document['class'], $document['table']);
-            }
-        }
-
-        return $documents;
-    }
 }

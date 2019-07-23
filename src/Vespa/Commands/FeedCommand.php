@@ -4,6 +4,7 @@ namespace Escavador\Vespa\Commands;
 
 use Carbon\Carbon;
 use Escavador\Vespa\Common\EnumModelStatusVespa;
+use Escavador\Vespa\Models\DocumentDefinition;
 use Escavador\Vespa\Models\SimpleClient;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
@@ -46,7 +47,7 @@ class FeedCommand extends Command
         $this->host = trim(config('vespa.host'));
         $this->vespa_status_column = config('vespa.model_columns.status', 'vespa_status');
         $this->vespa_date_column = config('vespa.model_columns.date', 'vespa_last_indexed_date');
-        $this->mapped_models = config('vespa.mapped_models');
+        $this->document_definitions = DocumentDefinition::loadDefinition();
         $this->limit = $this->getLimitDefault();
 
         $this->vespa_client = new SimpleClient($this->host);
@@ -105,14 +106,14 @@ class FeedCommand extends Command
 
         foreach ($models as $model)
         {
-            if (!array_key_exists($model, $this->mapped_models))
+            if (!($model_definition = DocumentDefinition::findDefinition($model, null, $this->document_definitions)))
             {
                 $this->error("The model [$model] is not mapped at vespa config file.");
                 //go to next model
                 continue;
             }
 
-            $table_name = ($this->mapped_models[$model])::getVespaDocumentTable();
+            $table_name = $model_definition->getModelTable();
 
             if (!Schema::hasColumn($table_name, $this->vespa_status_column))
             {
@@ -127,7 +128,7 @@ class FeedCommand extends Command
             //TODO: make this async
             try
             {
-                $this->process($model);
+                $this->process($model_definition);
                 $this->message('info', 'The vespa was fed.');
             }
             catch (\Exception $e)
@@ -189,9 +190,10 @@ class FeedCommand extends Command
         }
     }
 
-    private function process($model)
+    private function process($model_definition)
     {
-        $model_class = $this->mapped_models[$model];
+        $model_class = $model_definition->getModelClass();
+        $model = $model_definition->getDocumentType();
         $documents = $model_class::getVespaDocumentsToIndex($this->limit);
 
         $count_docs = count($documents);
@@ -204,7 +206,7 @@ class FeedCommand extends Command
 
         $this->message('info', "Feed vespa with [$count_docs] [$model].");
         //Records on vespa
-        $indexed = $this->vespa_client->sendDocuments($documents);
+        $indexed = $this->vespa_client->sendDocuments($model_definition, $documents);
 
         //Update model's vespa info in database
         $model_class::markAsIndexed($indexed);
