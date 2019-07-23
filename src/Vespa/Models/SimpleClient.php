@@ -19,18 +19,17 @@ use GuzzleHttp\RequestOptions;
 class SimpleClient extends AbstractClient
 {
 
-	protected $client;
+    protected $client;
 
-	public function __construct($host=null)
+    public function __construct($host=null)
     {
-    	 parent::__construct($host);
-    	$this->client = new Client();
+         parent::__construct($host);
+        $this->client = new Client();
     } 
 
-    public function sendDocument(AbstractDocument $document)
-	{
-        $url = $this->host . "/document/v1/{$document->getVespaNamespace()}/{$document->getVespaDocumentType()}/docid/{$document->getVespaDocumentId()}";
-
+    public function sendDocument(DocumentDefinition $definition, AbstractDocument $document)
+    {
+        $url = $this->host . "/document/v1/{$definition->getDocumentNamespace()}/{$definition->getDocumentType()}/docid/{$document->getVespaDocumentId()}";
         try
         {
             $response = $this->client->post($url,  [
@@ -40,7 +39,7 @@ class SimpleClient extends AbstractClient
         } catch (\Exception $ex)
         {
             //TODO Custom Exception
-    		throw new \Exception("Error Processing Request");
+            throw new \Exception("Error Processing Request");
         }
 
         if($response->getStatusCode() == 200)
@@ -53,20 +52,20 @@ class SimpleClient extends AbstractClient
         else
         {
             //TODO Custom Exception
-    		throw new Exception("Error Processing Request", $response->getStatusCode());
+            throw new Exception("Error Processing Request", $response->getStatusCode());
         }
-	}
+    }
 
-	public function sendDocuments($documents)
-	{
+    public function sendDocuments(DocumentDefinition $definition, $documents)
+    {
         $indexed = array();
-		foreach ($documents as $document)
-		{
-			$this->sendDocument($document);
+        foreach ($documents as $document)
+        {
+            $this->sendDocument($definition, $document);
 
             $indexed[] = $document;
-		}
+        }
 
-		return $indexed;
-	}
+        return $indexed;
+    }
 }
