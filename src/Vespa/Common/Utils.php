@@ -2,10 +2,10 @@
 
 namespace Escavador\Vespa\Common;
 
+use Escavador\Vespa\Models\Document;
+
 class Utils
 {
-
-
     /**
      * Returns the /search/ endpoint of vespa.
      *
@@ -16,25 +16,25 @@ class Utils
     public function searchUrl()
     {
         //TODO
-        return null
+        return null;
     }
 
-    /**
-     * Checks if this document instance is valid.
-     * 
-     *  It basically checks is the document instance follows
-     *  its fields structure.
-     *
-     * See: https://docs.vespa.ai/documentation/search-api.html
-     *
-     * @return boolean
-     */
-    public function searchUrl()
+
+    public static function loadDocuments()
     {
-        //TODO
-        return false;
+        $namespaces_data = config('vespa.namespace', []);
+        dd($namespaces_data);
+
+        $documents = [];
+        
+        foreach ($namespaces as $namespace => $values)
+        {
+            foreach ($values["document"] as $document)
+            {
+                $documents[] = new Document($key, $document['type'], $document['class'], $document['table']);
+            }
+        }
+
+        return $documents;
     }
-
-   
-
 }

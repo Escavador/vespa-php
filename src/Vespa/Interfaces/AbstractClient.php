@@ -3,7 +3,7 @@
 namespace Escavador\Vespa\Interfaces;
 
 use Escavador\Vespa\Interfaces\AbstractDocument;
-use Escavador\Vespa\Models\Namespace;
+use Escavador\Vespa\Models\DocumentNamespace;
 use Escavador\Vespa\Models\DocumentType;
 
 abstract class AbstractClient
@@ -26,12 +26,12 @@ abstract class AbstractClient
 
 	}
 
-	public final function getDocumentTypes(Namespace $namespace)
+	public final function getDocumentTypes(DocumentNamespace $namespace)
 	{
 
 	}
 
-	public final function getDocumentType(Namespace $namespace, string $documentType)
+	public final function getDocumentType(DocumentNamespace $namespace, string $documentType)
 	{
 
 	}

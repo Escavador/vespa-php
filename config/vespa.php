@@ -26,13 +26,15 @@ return array(
 	'namespace' => [
         'foo' => [
             'document' => [
-                'bar' => [
-                    'class' => '',
-                    'table' => ''
-                ]
+                [
+                    'type' => 'bar',
+                    'class' => 'foobar',
+                    'table' => 'bazz'
+                ],
+                //...
             ]
         ]
-    ]
+    ],
 
     'stop_words' => []
 );
