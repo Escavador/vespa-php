@@ -119,4 +119,21 @@ class DocumentDefinition
 
        return null;
     }
+
+    public static function findAllTypes($definitions = null)
+    {
+        if($definitions == null)
+            $definitions = DocumentDefinition::loadDefinition();
+
+        $all_type = [];
+        foreach ($definitions as $definition)
+        {
+            if (!in_array($definition->getDocumentType(), $all_type)) {
+                $all_type[] = $definition->getDocumentType();
+            }
+        }
+
+        return $all_type;
+    }
+
 }

@@ -66,7 +66,8 @@ class FeedCommand extends Command
         $this->message('info', 'Feed was started');
         $start_time = Carbon::now();
 
-        $models = $this->argument('model');
+        $all = $this->option('all');
+        $models = $this->option('model');
         $limit = $this->option('limit');
         $time_out = $this->option('time-out');
 
@@ -74,6 +75,23 @@ class FeedCommand extends Command
         {
             $this->error('The [model] argument has to be an array.');
             return;
+        }
+        if (!$models && !$all)
+        {
+            $this->error('At least one [model] is required to feed Vespa. If you want feed Vespa with all models, use the argument [all].');
+            return;
+        }
+
+        if ($models && $all)
+        {
+            $this->error('Only one argument ([all] or [model]) can be used at a time.');
+            return;
+        }
+
+        //Get all mapped models
+        if (!$models && $all)
+        {
+            $models = DocumentDefinition::findAllTypes($this->document_definitions);
         }
 
         if (!is_numeric($limit))
@@ -146,18 +164,6 @@ class FeedCommand extends Command
     }
 
     /**
-     * Get the console command arguments.
-     *
-     * @return array
-     */
-    protected function getArguments()
-    {
-        return array (
-            array('model', InputArgument::IS_ARRAY, 'Which models to include', array()),
-        );
-    }
-
-    /**
      * Get the console command options.
      *
      * @return array
@@ -165,11 +171,12 @@ class FeedCommand extends Command
     protected function getOptions()
     {
         return array (
-            array('limit', 'L', InputOption::VALUE_OPTIONAL, 'description here', $this->getLimitDefault()),
-            array('time-out', 'T', InputOption::VALUE_OPTIONAL, 'description here', $this->time_out),
+            array('model', 'M', InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'Which models to include', array()),
+            array('limit', 'L', InputOption::VALUE_OPTIONAL, 'Limit of model to feed Vespa', $this->getLimitDefault()),
+            array('time-out', 'T', InputOption::VALUE_OPTIONAL, 'description here', $this->time_out), //TODO testing this
+            array('all', 'A', InputOption::VALUE_NONE, 'Feed all mapped models on Vespa config'),
 
             //TODO arguments
-            //array('dir', 'D', InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'The model dir', array()),
             //array('ignore', 'I', InputOption::VALUE_OPTIONAL, 'Which models to ignore', ''),
             //array('bulk', 'B', InputOption::VALUE_OPTIONAL, 'description here', 0),
         );
