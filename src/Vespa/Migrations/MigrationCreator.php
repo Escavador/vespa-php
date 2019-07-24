@@ -37,6 +37,8 @@ class MigrationCreator extends  IlluminateMigrationCreator
         $stub = str_replace('DummyTable', $table, $stub);
         $stub = str_replace('DummyColumnNameStatus', config('vespa.model_columns.status', ''), $stub);
         $stub = str_replace('DummyColumnNameDate', config('vespa.model_columns.date', ''), $stub);
+        $stub = str_replace('DummyColumnCommentDate', config('vespa.model_columns.comment_date', 'Date of last indexing in Vespa.'), $stub);
+        $stub = str_replace('DummyColumnCommentStatus', config('vespa.model_columns.comment_status', 'State of model indexing in Vespa.'), $stub);
 
         return $stub;
     }
