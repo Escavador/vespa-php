@@ -6,6 +6,18 @@ use Escavador\Vespa\Models\Document;
 
 class Utils
 {
+    public static function vespaHost()
+    {
+        $host = trim(config('vespa.host'));
+        if(strpos($host, 'http://') != 0 || strpos($host, 'https://') != 0)
+            $host = 'http://'. $host;
+
+        if (filter_var($host, FILTER_VALIDATE_URL) === FALSE)
+            throw new \Exception('');
+
+        return $host;
+    }
+
     /**
      * Returns the /search/ endpoint of vespa.
      *
@@ -15,7 +27,6 @@ class Utils
      */
     public function searchUrl()
     {
-        //TODO
-        return null;
+        return Utils::vespaHost().'/search/';
     }
 }

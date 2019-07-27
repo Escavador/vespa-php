@@ -25,7 +25,27 @@ class SimpleClient extends AbstractClient
     {
          parent::__construct($host);
         $this->client = new Client();
-    } 
+    }
+
+    public function removeDocument(DocumentDefinition $definition, AbstractDocument $document)
+    {
+        throw new \Exception('Not implemented yet');
+    }
+
+    public function updateDocument(DocumentDefinition $definition, AbstractDocument $document)
+    {
+        throw new \Exception('Not implemented yet');
+    }
+
+    public function getDocument(DocumentDefinition $definition, AbstractDocument $document)
+    {
+        throw new \Exception('Not implemented yet');
+    }
+
+    public function getDocuments(DocumentDefinition $definition, AbstractDocument $document)
+    {
+        throw new \Exception('Not implemented yet');
+    }
 
     public function sendDocument(DocumentDefinition $definition, AbstractDocument $document)
     {

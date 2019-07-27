@@ -120,6 +120,7 @@ class FeedCommand extends Command
             return;
         }
 
+        //TODO test it
         set_time_limit($time_out ?: 0);
 
         foreach ($models as $model)
@@ -216,7 +217,7 @@ class FeedCommand extends Command
         $indexed = $this->vespa_client->sendDocuments($model_definition, $documents);
 
         //Update model's vespa info in database
-        $model_class::markAsIndexed($indexed);
+        $model_class::markAsVespaIndexed($indexed);
 
         $this->message('info', " $count_docs/". count($indexed)." [$model] was done.");
         return true;

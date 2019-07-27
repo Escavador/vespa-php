@@ -2,19 +2,31 @@
 
 namespace Escavador\Vespa\Models;
 
+use Escavador\Vespa\Common\Utils;
+
 class DocumentDefinition
 {
+    /**
+     * This dict specifies the meaning of the keys of the key/value_pairs of a Document
+     * when constructing the Document URI. Refer: https://docs.vespa.ai/documentation/documents.html#id-scheme
+     */
+    public const KEY_VALUE_PAIRS_LOOKUP = ['n'=> 'number', 'g'=> 'group'];
+
     protected $namespace;
     protected $model_class;
     protected $model_table;
     protected $type;
+    protected $key_values;
+    protected $user_pecified;
 
-    public function __construct($namespace, $type, $model_class, $model_table)
+    public function __construct($namespace, $type, $model_class, $model_table, $key_values = null, $user_pecified = null)
     {
         $this->namespace = $namespace;
         $this->type = $type;
         $this->model_class = $model_class;
         $this->model_table = $model_table;
+        $this->key_values = $key_values;
+        $this->user_pecified = $user_pecified;
     }
 
     public function getModelTable()
@@ -136,4 +148,67 @@ class DocumentDefinition
         return $all_type;
     }
 
+    /**
+     * Parses the document id scheme.
+     * i.e. $scheme ='id:music:music:g=mymusicsite.com:Michael-Jackson-Bad'
+     * See: https://docs.vespa.ai/documentation/documents.html#id-scheme
+     */
+    public static function schemeToDocument(string $scheme) : DocumentDefinition
+    {
+        try
+        {
+            list($id, $namespace, $document_type, $key_values, $user_pecified) = explode(':', $scheme);
+            $key_value_pairs = null;
+
+            if(strlen($key_values) > 0)
+            {
+                $key_value_pairs = [];
+                foreach (explode(',', $key_values) as $k_value)
+                {
+                    list($key, $value) = explode("=", $k_value);
+                    $key_value_pairs[$key] = $value;
+                }
+            }
+            $document_definition = DocumentDefinition::findDefinition($document_type, $namespace);
+            $document_definition->key_values = $key_values;
+            $document_definition->user_pecified = $user_pecified;
+            return $document_definition;
+        }
+        catch(\Exception $ex)
+        {
+            //TODO Custom Exeception
+            throw $ex;
+        }
+    }
+
+    /**
+     * Computes the document http uri access location.
+     * See: https://docs.vespa.ai/documentation/document-api.html#document-format
+     */
+    public static function documentToScheme(DocumentDefinition $document) : string
+    {
+        try
+        {
+            if(strlen($key_values) > 0)
+            {
+                $store_mode = 'docid';
+            }
+            else
+            {
+                $store_mode = '/';
+                foreach ($document->key_values as $key => $value)
+                {
+                    $store_mode.= KEY_VALUE_PAIRS_LOOKUP[$key].'/'.$value;
+                }
+            }
+
+            return Utils::vespaHost().'/document/v1/'.$document->getDocumentNamespace().'/'.$document->getDocumentType().'/'.$store_mode.'/'.$document->user_pecified;
+        }
+        catch(\Exception $ex)
+        {
+            //TODO Custom Exeception
+            throw $ex;
+        }
+        return '';
+    }
 }
