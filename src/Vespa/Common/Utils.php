@@ -9,11 +9,12 @@ class Utils
     public static function vespaHost()
     {
         $host = trim(config('vespa.host'));
-        if(strpos($host, 'http://') != 0 || strpos($host, 'https://') != 0)
+        if(!strpos($host, 'http://') || !strpos($host, 'https://'))
             $host = 'http://'. $host;
 
         if (filter_var($host, FILTER_VALIDATE_URL) === FALSE)
-            throw new \Exception('');
+            //TODO
+            throw new \Exception('Invalid Vespa Host');
 
         return $host;
     }
@@ -25,7 +26,7 @@ class Utils
      *
      * @return string
      */
-    public function searchUrl()
+    public static function vespaSearchEndPoint()
     {
         return Utils::vespaHost().'/search/';
     }
