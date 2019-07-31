@@ -33,8 +33,6 @@ class FeedCommand extends Command
 
     protected $limit;
 
-    protected $host;
-
     protected $time_out;
 
     protected $logger;
@@ -44,13 +42,12 @@ class FeedCommand extends Command
     public function __construct()
     {
         parent::__construct();
-        $this->host = trim(config('vespa.host'));
         $this->vespa_status_column = config('vespa.model_columns.status', 'vespa_status');
         $this->vespa_date_column = config('vespa.model_columns.date', 'vespa_last_indexed_date');
         $this->document_definitions = DocumentDefinition::loadDefinition();
         $this->limit = $this->getLimitDefault();
 
-        $this->vespa_client = new SimpleClient($this->host);
+        $this->vespa_client = new SimpleClient();
 
         //$this->logger = new Logger('vespa-log');
         //$this->logger->pushHandler(new StreamHandler(storage_path('logs/vespa-feeder.log')), Logger::INFO);
@@ -74,18 +71,18 @@ class FeedCommand extends Command
         if (!is_array($models))
         {
             $this->error('The [model] argument has to be an array.');
-            return;
+            exit(1);
         }
         if (!$models && !$all)
         {
             $this->error('At least one [model] is required to feed Vespa. If you want feed Vespa with all models, use the argument [all].');
-            return;
+            exit(1);
         }
 
         if ($models && $all)
         {
             $this->error('Only one argument ([all] or [model]) can be used at a time.');
-            return;
+            exit(1);
         }
 
         //Get all mapped models
@@ -97,13 +94,13 @@ class FeedCommand extends Command
         if (!is_numeric($limit))
         {
             $this->error('The [limit] argument has to be a number.');
-            return;
+            exit(1);
         }
 
         if ($limit <= 0)
         {
             $this->error('The [limit] argument has to be greater than 0.');
-            return;
+            exit(1);
         }
 
         $this->limit = $limit;
@@ -111,17 +108,18 @@ class FeedCommand extends Command
         if ($time_out !== null && !is_numeric($time_out))
         {
             $this->error('The [time-out] argument has to be a number.');
-            return;
+            exit(1);
         }
 
         if ($time_out !== null && !is_numeric($time_out <= 0))
         {
             $this->error('The [time-out] argument has to be a number.');
-            return;
+            exit(1);
         }
 
         //TODO test it
         set_time_limit($time_out ?: 0);
+        $was_fed = false;
 
         foreach ($models as $model)
         {
@@ -148,14 +146,21 @@ class FeedCommand extends Command
             try
             {
                 $this->process($model_definition);
-                $this->message('info', 'The vespa was fed.');
+                $was_fed = true;
             }
             catch (\Exception $e)
             {
                 $this->message('error', '... fail.' . ' '. $e->getMessage() );
+                exit(1);
             }
 
             unset($temp_model);
+        }
+
+        if($was_fed)
+        {
+            $total_duration = Carbon::now()->diffInSeconds($start_time);
+            $this->message('info', 'The vespa was fed in '. gmdate('H:i:s:m', $total_duration). '.');
         }
     }
 
