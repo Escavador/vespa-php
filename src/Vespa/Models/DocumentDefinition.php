@@ -29,6 +29,16 @@ class DocumentDefinition
         $this->user_pecified = $user_pecified;
     }
 
+    public function getUserPercified()
+    {
+        return $this->user_pecified;
+    }
+
+    public function getKeyValues()
+    {
+        return $this->key_values;
+    }
+
     public function getModelTable()
     {
         return $this->model_table;
@@ -153,7 +163,7 @@ class DocumentDefinition
      * i.e. $scheme ='id:music:music:g=mymusicsite.com:Michael-Jackson-Bad'
      * See: https://docs.vespa.ai/documentation/documents.html#id-scheme
      */
-    public static function schemeToDocument(string $scheme) : DocumentDefinition
+    public static function schemeToDocument(string $scheme, $definitions = null) : DocumentDefinition
     {
         try
         {
@@ -169,7 +179,7 @@ class DocumentDefinition
                     $key_value_pairs[$key] = $value;
                 }
             }
-            $document_definition = DocumentDefinition::findDefinition($document_type, $namespace);
+            $document_definition = DocumentDefinition::findDefinition($document_type, $namespace, $definitions);
             $document_definition->key_values = $key_values;
             $document_definition->user_pecified = $user_pecified;
             return $document_definition;
