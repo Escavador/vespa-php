@@ -3,8 +3,9 @@
 namespace Escavador\Vespa\Models;
 
 use Escavador\Vespa\Interfaces\AbstractDocument;
+use Escavador\Vespa\Interfaces\VespaResult;
 
-class Child
+class Child extends VespaResult
 {
     protected $documents = [];
     protected $relevance;
@@ -12,10 +13,10 @@ class Child
     protected $document_definition;
     protected $document;
     protected $id;
-    protected $fields;
 
-    public function __construct(object $child)
+    public function __construct(string $result, $only_raw = false, object $child)
     {
+        parent::__construct($result, $only_raw);
         //if json cannot be decoded
         if($child === null) {
             throw new \Exception("Invalid format to response child.");
@@ -31,20 +32,6 @@ class Child
     public function documentDefinition() : DocumentDefinition
     {
         return $this->document_definition;
-    }
-
-    public function field($key)
-    {
-        if (!$key || !property_exists($this->fields, $key)) {
-            return null;
-        }
-
-        return $this->fields->$key;
-    }
-
-    public function fields() : object
-    {
-        return $this->fields;
     }
 
     private function parseChild($child)
