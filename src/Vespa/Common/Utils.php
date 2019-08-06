@@ -2,7 +2,9 @@
 
 namespace Escavador\Vespa\Common;
 
+use Escavador\Vespa\Interfaces\AbstractClient;
 use Escavador\Vespa\Models\Document;
+use Escavador\Vespa\Models\VespaRESTClient;
 
 class Utils
 {
@@ -29,5 +31,11 @@ class Utils
     public static function vespaSearchEndPoint()
     {
         return Utils::vespaHost().'/search/';
+    }
+
+    public static function defaultVespaClient() : AbstractClient
+    {
+        $default_client = config('vespa.default.client', VespaRESTClient::class);
+        return new $default_client;
     }
 }

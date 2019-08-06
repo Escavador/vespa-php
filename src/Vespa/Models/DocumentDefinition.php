@@ -3,6 +3,7 @@
 namespace Escavador\Vespa\Models;
 
 use Escavador\Vespa\Common\Utils;
+use Escavador\Vespa\Interfaces\AbstractDocument;
 
 class DocumentDefinition
 {
@@ -115,6 +116,31 @@ class DocumentDefinition
         }
 
         return $filtred_definitions;
+    }
+
+    public static function findDefinitionByClass(string $model_class, $namespace = null, $definitions = null)
+    {
+        if($definitions == null)
+            $definitions = DocumentDefinition::loadDefinition();
+
+        foreach ($definitions as $definition)
+        {
+            if($namespace && $definition->getDocumentNamespace() != $namespace)
+            {
+                continue;
+            }
+            if($namespace)
+            {
+                if($definition->getDocumentNamespace() == $namespace && $definition->getModelClass() == $model_class)
+                {
+                    return $definition;
+                }
+            }
+            else if($definition->getModelClass() == $model_class)
+                return $definition;
+        }
+
+        return null;
     }
 
     public static function findDefinition($document_type, $namespace = null, $definitions = null)

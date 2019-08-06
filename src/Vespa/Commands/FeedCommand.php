@@ -4,6 +4,7 @@ namespace Escavador\Vespa\Commands;
 
 use Carbon\Carbon;
 use Escavador\Vespa\Common\EnumModelStatusVespa;
+use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Models\DocumentDefinition;
 use Escavador\Vespa\Models\SimpleClient;
 use Illuminate\Console\Command;
@@ -47,7 +48,7 @@ class FeedCommand extends Command
         $this->document_definitions = DocumentDefinition::loadDefinition();
         $this->limit = $this->getLimitDefault();
 
-        $this->vespa_client = new SimpleClient();
+        $this->vespa_client = Utils::defaultVespaClient();
 
         //$this->logger = new Logger('vespa-log');
         //$this->logger->pushHandler(new StreamHandler(storage_path('logs/vespa-feeder.log')), Logger::INFO);

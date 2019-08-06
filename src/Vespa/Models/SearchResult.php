@@ -21,16 +21,12 @@ class SearchResult extends VespaResult
 
         try
         {
-            $result = json_decode($result);
-            //if json cannot be decoded
-            if ($result === null) throw new \Exception("Invalid response");
-            $result = (object)$result;
-
+            $result = (object) json_decode($result);
             $this->id = $result->root->id;
             $this->relevance = $result->root->relevance;
             $this->coverage = $result->root->coverage;
             $this->fields = $result->root->fields;
-            $this->children = $this->parseChildren($result->root->children);
+            $this->children = isset($result->root->children)? $this->parseChildren($result->root->children): [];
             $this->only_raw = false;
         }
         catch (\Exception $ex) //TOOD Custom Exception
@@ -38,8 +34,6 @@ class SearchResult extends VespaResult
             $this->only_raw = true;
         }
     }
-
-    //public function
 
     public function children() : array
     {
@@ -52,7 +46,7 @@ class SearchResult extends VespaResult
 
         foreach ($children as $child)
         {
-            $children_processed[] = new Child(json_encode($child), $this->only_raw, $child);
+            $children_processed[] = new DocumentChild((object) $child, $this->only_raw, $child);
         }
 
         return $children_processed;

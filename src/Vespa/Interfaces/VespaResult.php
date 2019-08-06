@@ -19,6 +19,9 @@ abstract class VespaResult
     {
         $this->json_data = $result;
         $this->only_raw = $only_raw;
+
+        //if json cannot be decoded
+        if ($result === null) throw new \Exception("Invalid response");
     }
 
     public final function onlyRaw() : bool
@@ -29,6 +32,11 @@ abstract class VespaResult
     public final function raw() : string
     {
         return $this->json_data;
+    }
+
+    public final function json() : string
+    {
+        return json_encode($this->json_data);
     }
 
     public final function field($key)

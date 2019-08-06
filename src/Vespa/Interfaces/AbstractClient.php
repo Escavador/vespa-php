@@ -7,24 +7,28 @@ use Escavador\Vespa\Interfaces\AbstractDocument;
 use Escavador\Vespa\Models\DocumentDefinition;
 use Escavador\Vespa\Models\DocumentNamespace;
 use Escavador\Vespa\Models\DocumentType;
+use Escavador\Vespa\Models\VespaQuery;
 
 abstract class AbstractClient
 {
     //abstract public function documentIsRegistred(DocumentDefinition $definition) : bool;
+    abstract public function search(array $data) : VespaResult;
     abstract public function sendDocuments(DocumentDefinition $definition, $documents);
 	abstract public function sendDocument(DocumentDefinition $definition, AbstractDocument $document);
-    abstract public function searchRaw(string $term, $document_type = null, $options = null);
-    abstract public function search(string $term, AbstractDocument $document = null, $options = null);
-    abstract public function removeDocument(DocumentDefinition $definition, AbstractDocument $document);
     abstract public function updateDocument(DocumentDefinition $definition, AbstractDocument $document);
+    abstract public function removeDocument(string $scheme);
     abstract public function getDocument(string $scheme) : AbstractDocument;
-    abstract public function getDocuments(DocumentDefinition $definition, AbstractDocument $document);
 
     protected $host;
 
 	public function __construct()
     {
     	$this->host = Utils::vespaHost();
-    	$this->documents = DocumentDefinition::loadDefinition();
+    	$this->refreshDefinitions();
+    }
+
+    public final function refreshDefinitions()
+    {
+        $this->documents = DocumentDefinition::loadDefinition();
     }
 }

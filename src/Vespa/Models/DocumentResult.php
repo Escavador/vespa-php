@@ -19,12 +19,7 @@ class DocumentResult  extends VespaResult
 
         try
         {
-            $result = json_decode($result);
-            //if json cannot be decoded
-            if ($result === null) throw new \Exception("Invalid response");
-            $result = (object)$result;
-
-            $this->parseDocument($result);
+            $this->parseDocument((object) $this->json());
             $this->only_raw = false;
         }
         catch (\Exception $ex) //TOOD Custom Exception
@@ -35,10 +30,6 @@ class DocumentResult  extends VespaResult
 
     public function document() : AbstractDocument
     {
-//        if($this->onlyRaw())
-//            //TODO Custom Exeception
-//            throw new \Exception("This response was not normalized. Please see the \"raw\" property");
-
         return $this->getAttribute('document');
     }
 
