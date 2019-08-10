@@ -3,6 +3,7 @@
 namespace Escavador\Vespa\Models;
 
 
+use Carbon\Carbon;
 use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Interfaces\AbstractClient;
 use Escavador\Vespa\Interfaces\AbstractDocument;
@@ -185,9 +186,15 @@ class VespaRESTClient extends AbstractClient
         $indexed = array();
         foreach ($documents as $document)
         {
-            $this->sendDocument($definition, $document);
-
-            $indexed[] = $document;
+            try
+            {
+                if($this->sendDocument($definition, $document))
+                    $indexed[] = $document;
+            }
+            catch (\Exception $ex)//TODO Custom Exception
+            {
+                continue;
+            }
         }
 
         return $indexed;
