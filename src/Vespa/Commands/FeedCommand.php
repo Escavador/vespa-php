@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Schema;
 use Log;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
-use GuzzleHttp\Client;
 
 class FeedCommand extends Command
 {
@@ -34,6 +33,8 @@ class FeedCommand extends Command
 
     protected $limit;
 
+    protected $bulk;
+
     protected $time_out;
 
     protected $logger;
@@ -46,7 +47,6 @@ class FeedCommand extends Command
         $this->vespa_status_column = config('vespa.model_columns.status', 'vespa_status');
         $this->vespa_date_column = config('vespa.model_columns.date', 'vespa_last_indexed_date');
         $this->document_definitions = DocumentDefinition::loadDefinition();
-        $this->limit = $this->getLimitDefault();
 
         $this->vespa_client = Utils::defaultVespaClient();
 
@@ -67,6 +67,7 @@ class FeedCommand extends Command
         $all = $this->option('all');
         $models = $this->option('model');
         $limit = $this->option('limit');
+        $bulk = $this->option('bulk');
         $time_out = $this->option('time-out');
 
         if (!is_array($models))
@@ -98,13 +99,26 @@ class FeedCommand extends Command
             exit(1);
         }
 
+        if (!is_numeric($bulk))
+        {
+            $this->error('The [bulk] argument has to be a number.');
+            exit(1);
+        }
+
         if ($limit <= 0)
         {
             $this->error('The [limit] argument has to be greater than 0.');
             exit(1);
         }
 
-        $this->limit = $limit;
+        if ($bulk <= 0)
+        {
+            $this->error('The [bulk] argument has to be greater than 0.');
+            exit(1);
+        }
+
+        $this->limit = intval($limit);
+        $this->bulk = intval($bulk);
 
         if ($time_out !== null && !is_numeric($time_out))
         {
@@ -167,7 +181,12 @@ class FeedCommand extends Command
 
     protected function getLimitDefault()
     {
-        return config('vespa.default.limit', 1);
+        return config('vespa.default.limit', 0);
+    }
+
+    protected function getBulkDefault()
+    {
+        return config('vespa.default.bulk', 0);
     }
 
     /**
@@ -180,12 +199,12 @@ class FeedCommand extends Command
         return array (
             array('model', 'M', InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'Which models to include', array()),
             array('limit', 'L', InputOption::VALUE_OPTIONAL, 'Limit of model to feed Vespa', $this->getLimitDefault()),
-            array('time-out', 'T', InputOption::VALUE_OPTIONAL, 'description here', $this->time_out), //TODO testing this
+            array('time-out', 'T', InputOption::VALUE_OPTIONAL, 'Defines the execution timeout', $this->time_out), //TODO testing this
             array('all', 'A', InputOption::VALUE_NONE, 'Feed all mapped models on Vespa config'),
+            array('bulk', 'B', InputOption::VALUE_OPTIONAL, 'description here', $this->getBulkDefault()),
 
             //TODO arguments
             //array('ignore', 'I', InputOption::VALUE_OPTIONAL, 'Which models to ignore', ''),
-            //array('bulk', 'B', InputOption::VALUE_OPTIONAL, 'description here', 0),
         );
     }
 
@@ -204,6 +223,24 @@ class FeedCommand extends Command
         }
     }
 
+    private function pepareBulk(array $documents)
+    {
+        $bulks = [];
+        $bulk = [];
+        $size =  count($documents);
+        for ($i = 0; $i < $size; $i++)
+        {
+            $bulk[] = $documents[$i];
+
+            if(count($bulk) == $this->bulk || $i == $size - 1)
+            {
+                $bulks[] =  $bulk;
+                $bulk = [];
+            }
+        }
+        return $bulks;
+    }
+
     private function process($model_definition)
     {
         $model_class = $model_definition->getModelClass();
@@ -219,8 +256,13 @@ class FeedCommand extends Command
         }
 
         $this->message('info', "Feed vespa with [$count_docs] [$model].");
-        //Records on vespa
-        $indexed = $this->vespa_client->sendDocuments($model_definition, $documents);
+        $documents = $this->pepareBulk($documents);
+        $indexed = [];
+        foreach ($documents as $bulk)
+        {
+            //Records on vespa
+            $indexed[] = $this->vespa_client->sendDocuments($model_definition, $bulk);
+        }
 
         //Update model's vespa info in database
         $model_class::markAsVespaIndexed($indexed);

@@ -9,6 +9,7 @@ use Escavador\Vespa\Interfaces\AbstractClient;
 use Escavador\Vespa\Interfaces\AbstractDocument;
 use Escavador\Vespa\Interfaces\VespaResult;
 use GuzzleHttp\Client;
+use GuzzleHttp\Promise;
 use GuzzleHttp\RequestOptions;
 
 
@@ -184,18 +185,30 @@ class VespaRESTClient extends AbstractClient
     public function sendDocuments(DocumentDefinition $definition, $documents)
     {
         $indexed = array();
+        $promises = [];
+
         foreach ($documents as $document)
         {
-            try
-            {
-                if($this->sendDocument($definition, $document))
-                    $indexed[] = $document;
-            }
-            catch (\Exception $ex)//TODO Custom Exception
-            {
-                continue;
-            }
+            $url = $this->host . "/document/v1/{$definition->getDocumentNamespace()}/{$definition->getDocumentType()}/docid/{$document->getVespaDocumentId()}";
+
+            $promises[] = $this->client->postAsync($url,  [
+                RequestOptions::JSON => array('fields' => $document->getVespaDocumentFields())
+            ]);
         }
+
+        $responses = Promise\settle($promises)->wait();
+
+        dd($responses);
+
+        //            try
+//            {
+//                if($this->sendDocument($definition, $document))
+//                    $indexed[] = $document;
+//            }
+//            catch (\Exception $ex)//TODO Custom Exception
+//            {
+//                continue;
+//            }
 
         return $indexed;
     }
