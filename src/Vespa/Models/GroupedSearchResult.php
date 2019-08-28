@@ -9,7 +9,7 @@ class GroupedSearchResult extends VespaResult
 {
     protected $relevance;
     protected $coverage;
-    protected $children_group = [];
+    protected $group_root;
     protected $children_document = [];
     protected $fields;
 
@@ -36,7 +36,7 @@ class GroupedSearchResult extends VespaResult
         }
     }
 
-    public function children() : array
+    public function allChildren() : array
     {
         $children_group = $this->childrenGroup();
         $children_document = $this->childrenDocument();
@@ -44,17 +44,23 @@ class GroupedSearchResult extends VespaResult
         return array_merge($children_group?: [], $children_document?: []);
     }
 
-    public function childrenGroup() : array
+    public function groupRoot() : GroupRoot
     {
-        return $this->getAttribute('children_document');
+        return $this->group_root?: null;
     }
 
-    public function childrenDocument() : array
+    public function groups() : array
     {
-        return $this->getAttribute('children_document');
+        $group_root = $this->groupRoot();
+        return $group_root? $group_root->groups() : [];
     }
 
-    private function parseChildren($root) : array
+    public function children() : array
+    {
+        return $this->getAttribute('children_document')?: [];
+    }
+
+    private function parseChildren($root)
     {
         if (isset($root->children))
         {
@@ -62,8 +68,9 @@ class GroupedSearchResult extends VespaResult
             {
                 if (strpos($child->id, "group") === 0)
                 {
-                    $this->children_group[] = new GroupChild($child, $this->only_raw);
-                } else
+                    $this->group_root = new GroupRoot($child, $this->only_raw);
+                }
+                else
                 {
                     $this->children_document[] = new DocumentChild($child, $this->only_raw);
                 }

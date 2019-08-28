@@ -10,6 +10,7 @@ class DocumentChild extends AbstractChild
     protected $source;
     protected $document_definition;
     protected $document;
+    protected $fields;
 
     public function __construct(object $child, $only_raw = false)
     {
