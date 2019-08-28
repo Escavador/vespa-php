@@ -9,7 +9,11 @@ use Escavador\Vespa\Interfaces\AbstractClient;
 use Escavador\Vespa\Interfaces\AbstractDocument;
 use Escavador\Vespa\Interfaces\VespaResult;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Pool;
 use GuzzleHttp\Promise;
+use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\RequestOptions;
 
 
@@ -23,17 +27,17 @@ use GuzzleHttp\RequestOptions;
 class VespaRESTClient extends AbstractClient
 {
     protected $client;
+    protected $max_concurrency;
 
     public function __construct()
     {
         parent::__construct();
         $this->client = new Client();
+        $this->max_concurrency = config('vespa.default.vespa_rest_client.max_concurrency', 6);
     }
 
     public function search(array $data) : VespaResult
     {
-        $searchIsGrouping = array_key_exists('yql', $data) && strpos($data['yql'], '|') !== false;
-
         try
         {
             $response = $this->client->post(Utils::vespaSearchEndPoint(), [
@@ -52,11 +56,11 @@ class VespaRESTClient extends AbstractClient
         if ($response->getStatusCode() == 200)
         {
             $content = $response->getBody()->getContents();
-
+            $searchIsGrouping = strpos($content, "group:root") !== false; //TODO improve this check
             if($searchIsGrouping)
-                return  new GroupedSearchResult($content);
+                return new GroupedSearchResult($content);
             else
-                return  new SearchResult($content);
+                return new SearchResult($content);
         }
 
         //TODO Custom Exception
@@ -185,30 +189,30 @@ class VespaRESTClient extends AbstractClient
     public function sendDocuments(DocumentDefinition $definition, $documents)
     {
         $indexed = array();
-        $promises = [];
 
-        foreach ($documents as $document)
-        {
-            $url = $this->host . "/document/v1/{$definition->getDocumentNamespace()}/{$definition->getDocumentType()}/docid/{$document->getVespaDocumentId()}";
+        $requests = function ($documents, $definition) {
+            foreach ($documents as $document)
+            {
+                $url = $this->host . "/document/v1/{$definition->getDocumentNamespace()}/{$definition->getDocumentType()}/docid/{$document->getVespaDocumentId()}";
+                yield new Request('POST', $url, [], json_encode(['fields' =>  $document->getVespaDocumentFields()]));
+            }
+        };
 
-            $promises[] = $this->client->postAsync($url,  [
-                RequestOptions::JSON => array('fields' => $document->getVespaDocumentFields())
-            ]);
-        }
+        $pool = new Pool($this->client, $requests($documents, $definition), [
+            'concurrency' => $this->max_concurrency,
+            'fulfilled' => function (Response $response, $index) use (&$documents, &$indexed){
+                $indexed[] = $documents[$index];
+            },
+            'rejected' => function (RequestException $reason, $index) {
+                //TODO log this
+            },
+        ]);
 
-        $responses = Promise\settle($promises)->wait();
+        // Initiate the transfers and create a promise
+        $promise = $pool->promise();
 
-        dd($responses);
-
-        //            try
-//            {
-//                if($this->sendDocument($definition, $document))
-//                    $indexed[] = $document;
-//            }
-//            catch (\Exception $ex)//TODO Custom Exception
-//            {
-//                continue;
-//            }
+        // Force the pool of requests to complete.
+        $promise->wait();
 
         return $indexed;
     }
