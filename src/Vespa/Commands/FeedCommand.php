@@ -261,13 +261,14 @@ class FeedCommand extends Command
         foreach ($documents as $bulk)
         {
             //Records on vespa
-            $indexed[] = $this->vespa_client->sendDocuments($model_definition, $bulk);
+            $result = $this->vespa_client->sendDocuments($model_definition, $bulk);
+            $indexed = array_merge($indexed, $result);
         }
 
         //Update model's vespa info in database
         $model_class::markAsVespaIndexed($indexed);
 
-        $this->message('info', " $count_docs/". count($indexed)." [$model] was done.");
+        $this->message('info', count($indexed)." /$count_docs [$model] was done.");
         return true;
     }
 }
