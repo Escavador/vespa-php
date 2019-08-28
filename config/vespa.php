@@ -20,7 +20,8 @@ return array(
 
     'default' => array(
         'client' => \Escavador\Vespa\Models\VespaRESTClient::class,
-        'limit' => 100,
+        'limit' => 500,
+        'bulk' => 100,
         'set_language' => 'en-US'
     ),
 
