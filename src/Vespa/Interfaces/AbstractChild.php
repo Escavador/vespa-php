@@ -9,7 +9,7 @@ abstract class AbstractChild extends VespaResult
 {
     protected $id;
     protected $relevance;
-    protected $source;
+    protected $fields;
 
     public function __construct(object $child, $only_raw = false)
     {

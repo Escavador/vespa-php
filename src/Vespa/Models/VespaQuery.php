@@ -16,10 +16,6 @@ class VespaQuery
 
     public final function get() : VespaResult
     {
-        $default_language = config('vespa.default.set_language');
-        $default_timeout = config('vespa.default.timeout');
-        if(!isset($this->language) && $default_language) $this->language = $default_language ;
-        if(!isset($this->timeout) && $default_timeout) $this->timeout = $default_timeout;
         $payload = $this->toArray();
         $this->reset();
         return $this->parent_client->search($payload);
@@ -43,6 +39,13 @@ class VespaQuery
         {
             unset($this->$property);
         }
+
+        return $this;
+    }
+
+    public final function payload(string $field, $data) : VespaQuery
+    {
+        $this->$field = $data;
 
         return $this;
     }
