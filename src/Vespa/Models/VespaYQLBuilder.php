@@ -39,6 +39,7 @@ class VespaYQLBuilder
 
     public function addTokenizeCondition(string $term, string $field = 'default', $group_name = null, $logical_operator = "AND", bool $stemming = null) : VespaYQLBuilder
     {
+        $term = $this->removeQuotes($term);
         $tokens = $this->generateCombinations($term);
 
         if(count($tokens) == 0)
@@ -67,34 +68,55 @@ class VespaYQLBuilder
         return $this;
     }
 
-    public function addDistanceCondition(string $term, string $field = 'default', int $word_distance = null, $group_name = null, $logical_operator = "AND", bool $stemming = null) : VespaYQLBuilder
+    public function addPhraseCondition(string $term, string $field = 'default', $group_name = null, $logical_operator = "AND") : VespaYQLBuilder
     {
-        if(!isset($word_distance)) $word_distance = config('vespa.default.word_distance', 2);
+        $term = $this->removeQuotes($term);
         $tokens = $this->generateCombinations($term);
 
-        //if only one token is passed, adds a simple condition
         if(count($tokens) == 0)
+            $this->createGroupCondition($field, "CONTAINS", "'$term'", $group_name, $logical_operator);
+
+        $phrase = '(';
+        for($i = 0; $i < count($tokens); $i ++)
+        {
+            $token = $tokens[$i];
+            $key = "'" . key($token) . "'";
+            $phrase .= $key . (($i < count($tokens) - 1)? ', ': '');
+        }
+        $phrase .= ')';
+
+        $this->createGroupCondition($field, "CONTAINS", $phrase, $group_name, $logical_operator);
+
+        return $this;
+    }
+
+    public function addDistanceCondition(string $term, string $field = 'default', int $word_distance = null,
+                                         $group_name = null, $logical_operator = "AND", bool $stemming = null,
+                                         $same_order = true) : VespaYQLBuilder
+    {
+        $tokens = $this->splitTerm($term);
+        $tokens_size = count($tokens);
+        if(!isset($word_distance)) $word_distance = $tokens_size - 1;
+
+        //if only one token is passed, adds a simple condition
+        if($tokens_size == 1)
         {
             $term = "'$term'";
             if($stemming !== null) $term = "([{'stem': ". json_encode($stemming). "}]$term)";
             $this->createGroupCondition($field, "CONTAINS", $term, $group_name, $logical_operator);
+            return $this;
         }
 
-        for($i = 0; $i < count($tokens); $i ++)
+        for($i = 0; $i < $tokens_size; $i ++)
         {
-            $token = $tokens[$i];
-            $key = key($token);
-            $value = $token[$key];
-            $stemming_term = '';
-            if($stemming !== null) $stemming_term = ", 'stem': ". json_encode($stemming);
-
-            $this->createGroupCondition($field, "CONTAINS", "([ {'distance': ".($word_distance + 1)."$stemming_term}]onear('$key', '$value'))", $group_name, $logical_operator);
-            if($i == 0)
-            {
-                $logical_operator = 'OR';  //only the first logical operator can be different of 'OR'
-                $group_name = -1; //always the last group added
-            }
+            $tokens[$i] = $this->removeQuotes($tokens[$i]);
+            $tokens[$i] = "'$tokens[$i]'";
         }
+
+        $near = $same_order ? 'onear' : 'near';
+        $stemming_term = '';
+        if($stemming !== null) $stemming_term = ", 'stem': ". json_encode($stemming);
+        $this->createGroupCondition($field, "CONTAINS", "([ {'distance': ".($word_distance + 1)."$stemming_term}]$near(".implode(', ', $tokens)."))", $group_name, $logical_operator);
 
         return $this;
     }
@@ -120,7 +142,6 @@ class VespaYQLBuilder
         $this->search_conditions [] = $condition;
         return $this;
     }
-
 
     public function addGroupCondition($term, string $field = 'default', $operator = 'CONTAINS', $group_name = null, $logical_operator = 'OR', bool $stemming = null) : VespaYQLBuilder
     {
@@ -305,9 +326,14 @@ class VespaYQLBuilder
         return trim(preg_replace("/\s+/", '${1} ', $text));
     }
 
-    private function generateCombinations($term)
+    private function splitTerm($term)
     {
-        $arr = explode(" ", $term);
+        return  explode(" ", $term);
+    }
+
+    private function generateCombinations($term, $inverse = false)
+    {
+        $arr = $this->splitTerm($term);
         $arr_c = [];
         $tuples = [];
 
@@ -323,7 +349,7 @@ class VespaYQLBuilder
                     $arr_c[$arr[$i]][] = $arr[$j];
                     $tuples[] = [$arr[$i] => $arr[$j]];
                 }
-                if (!in_array($arr[$i], $arr_c[$arr[$j]]))
+                if ($inverse && !in_array($arr[$i], $arr_c[$arr[$j]]))
                 {
                     $arr_c[$arr[$j]][] = $arr[$i];
                     $tuples[] = [$arr[$j] => $arr[$i]];
