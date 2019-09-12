@@ -137,7 +137,7 @@ class VespaRESTClient extends AbstractClient
         } catch (\Exception $ex)
         {
             //TODO Custom Exception
-            throw new \Exception("Error Processing Request");
+            throw new \Exception(get_class($this).": Error Processing Request", $ex->getCode(), $ex);
         }
 
         if($response->getStatusCode() == 200)
@@ -146,14 +146,14 @@ class VespaRESTClient extends AbstractClient
             $result = new DocumentResult($content);
             if($result->onlyRaw())
                 //TODO Custom Exception
-                new Exception("Error Processing Request", $response->getStatusCode());
+                throw new \Exception(get_class($this).": Error Processing Response. Only raw data is available.", $ex->getCode(), $ex);
 
             return $result->document();
         }
         else
         {
             //TODO Custom Exception
-            throw new Exception("Error Processing Request", $response->getStatusCode());
+            throw new Exception(get_class($this).": Error Processing Response [{$response->getStatusCode()}]", $ex->getCode(), $ex);
         }
     }
 
@@ -169,7 +169,7 @@ class VespaRESTClient extends AbstractClient
         } catch (\Exception $ex)
         {
             //TODO Custom Exception
-            throw new \Exception("Error Processing Request");
+            throw new \Exception(get_class($this).": Error Processing Request", $ex->getCode(), $ex);
         }
 
         if($response->getStatusCode() == 200)
@@ -182,7 +182,7 @@ class VespaRESTClient extends AbstractClient
         else
         {
             //TODO Custom Exception
-            throw new Exception("Error Processing Request", $response->getStatusCode());
+            throw new Exception(get_class($this).": Error Processing Response [{$response->getStatusCode()}]", $ex->getCode(), $ex);
         }
     }
 

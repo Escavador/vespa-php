@@ -11,7 +11,7 @@ class Utils
     public static function vespaHost()
     {
         $host = trim(config('vespa.host'));
-        if(!strpos($host, 'http://') || !strpos($host, 'https://'))
+        if(strpos($host, 'http://') !== 0 && strpos($host, 'https://') !== 0)
             $host = 'http://'. $host;
 
         if (filter_var($host, FILTER_VALIDATE_URL) === FALSE)
