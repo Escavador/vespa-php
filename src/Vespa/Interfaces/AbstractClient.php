@@ -20,11 +20,15 @@ abstract class AbstractClient
     abstract public function getDocument(string $scheme) : AbstractDocument;
 
     protected $host;
+    protected $headers;
 
-	public function __construct()
+    public function __construct()
     {
     	$this->host = Utils::vespaHost();
     	$this->refreshDefinitions();
+    	$this->headers = config('vespa.default.headers', [
+            'Content-Type' => 'application/json',
+        ]);
     }
 
     public final function refreshDefinitions()

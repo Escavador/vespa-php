@@ -29,7 +29,7 @@ class VespaRESTClient extends AbstractClient
     protected $client;
     protected $max_concurrency;
 
-    public function __construct()
+    public function __construct(array $headers = null)
     {
         parent::__construct();
         $this->client = new Client();
@@ -41,9 +41,7 @@ class VespaRESTClient extends AbstractClient
         try
         {
             $response = $this->client->post(Utils::vespaSearchEndPoint(), [
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                ],
+                'headers' => $this->headers,
                 'json' => $data
             ]);
         }
@@ -74,7 +72,7 @@ class VespaRESTClient extends AbstractClient
 
         try
         {
-            $response = $this->client->delete($url);
+            $response = $this->client->delete($url, $this->headers);
         } catch (\Exception $ex)
         {
             //TODO Custom Exception
@@ -133,7 +131,7 @@ class VespaRESTClient extends AbstractClient
         $url = $this->host . "/document/v1/{$definition->getDocumentNamespace()}/{$definition->getDocumentType()}/docid/{$definition->getUserPercified()}";
         try
         {
-            $response = $this->client->get($url);
+            $response = $this->client->get($url, $this->headers);
         } catch (\Exception $ex)
         {
             //TODO Custom Exception
@@ -194,7 +192,7 @@ class VespaRESTClient extends AbstractClient
             foreach ($documents as $document)
             {
                 $url = $this->host . "/document/v1/{$definition->getDocumentNamespace()}/{$definition->getDocumentType()}/docid/{$document->getVespaDocumentId()}";
-                yield new Request('POST', $url, [], json_encode(['fields' =>  $document->getVespaDocumentFields()]));
+                yield new Request('POST', $url, $this->headers, json_encode(['fields' =>  $document->getVespaDocumentFields()]));
             }
         };
 

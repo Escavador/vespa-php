@@ -20,6 +20,9 @@ return array(
 
     'default' => array(
         'client' => \Escavador\Vespa\Models\VespaRESTClient::class,
+        'headers' => [
+            'Content-Type' => 'application/json',
+        ],
         'limit' => 500,
         'bulk' => 100,
         'set_language' => 'en-US'
