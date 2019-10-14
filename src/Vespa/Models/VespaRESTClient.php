@@ -28,12 +28,24 @@ class VespaRESTClient extends AbstractClient
 {
     protected $client;
     protected $max_concurrency;
+    protected $headers;
 
-    public function __construct()
+    public function __construct(array $headers = null)
     {
         parent::__construct();
         $this->client = new Client();
         $this->max_concurrency = config('vespa.default.vespa_rest_client.max_concurrency', 6);
+
+        if(!$this->headers)
+        {
+            $this->headers = [
+                'Content-Type' => 'application/json',
+            ];
+        }
+        else
+        {
+            $this->headers = $headers;
+        }
     }
 
     public function search(array $data) : VespaResult
@@ -41,9 +53,7 @@ class VespaRESTClient extends AbstractClient
         try
         {
             $response = $this->client->post(Utils::vespaSearchEndPoint(), [
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                ],
+                'headers' => $this->headers,
                 'json' => $data
             ]);
         }
