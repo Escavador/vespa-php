@@ -36,7 +36,7 @@ class VespaRESTClient extends AbstractClient
         $this->client = new Client();
         $this->max_concurrency = config('vespa.default.vespa_rest_client.max_concurrency', 6);
 
-        if(!$this->headers)
+        if(!$headers)
         {
             $this->headers = [
                 'Content-Type' => 'application/json',
