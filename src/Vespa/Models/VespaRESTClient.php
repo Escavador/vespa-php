@@ -18,12 +18,12 @@ use GuzzleHttp\RequestOptions;
 
 
 /**
-* 
-* RESTified Document Operation API: Simple REST API for operations based on document ID (get, put, remove, update,visit).
-* 
-* See: https://docs.vespa.ai/documentation/writing-to-vespa.html
-*
-*/
+ *
+ * RESTified Document Operation API: Simple REST API for operations based on document ID (get, put, remove, update,visit).
+ *
+ * See: https://docs.vespa.ai/documentation/writing-to-vespa.html
+ *
+ */
 class VespaRESTClient extends AbstractClient
 {
     protected $client;
@@ -53,7 +53,7 @@ class VespaRESTClient extends AbstractClient
         catch (\Exception $ex)
         {
             //TODO Custom Exception
-            throw new \Exception("Error Processing Search Request", $ex->getCode(), $ex);
+            throw $ex;
         }
 
         if ($response->getStatusCode() == 200)
@@ -67,7 +67,7 @@ class VespaRESTClient extends AbstractClient
         }
 
         //TODO Custom Exception
-        throw new \Exception("Error Processing Request");
+        throw new \Exception("Error Processing Request [{$response->getBody()}]", $response->getStatusCode());
     }
 
     public function removeDocument($scheme)
@@ -81,7 +81,7 @@ class VespaRESTClient extends AbstractClient
         } catch (\Exception $ex)
         {
             //TODO Custom Exception
-            throw new \Exception("Error Processing Request");
+            throw $ex;
         }
 
         if($response->getStatusCode() == 200)
@@ -90,14 +90,14 @@ class VespaRESTClient extends AbstractClient
             $result = new DocumentResult($content);
             if($result->onlyRaw())
                 //TODO Custom Exception
-                new Exception("Error Processing Request", $response->getStatusCode(), new \Exception($response->getBody()));
+                throw new \Exception("Error Processing Response. Only raw data is available.");
 
             return $result->document();
         }
         else
         {
             //TODO Custom Exception
-            throw new Exception("Error Processing Request", $response->getStatusCode());
+            throw new \Exception("Error Processing Request [{$response->getBody()}]", $response->getStatusCode());
         }
     }
 
@@ -114,7 +114,7 @@ class VespaRESTClient extends AbstractClient
         } catch (\Exception $ex)
         {
             //TODO Custom Exception
-            throw new \Exception("Error Processing Request");
+            throw $ex;
         }
 
         if($response->getStatusCode() == 200)
@@ -127,7 +127,7 @@ class VespaRESTClient extends AbstractClient
         else
         {
             //TODO Custom Exception
-            new Exception("Error Processing Request", $response->getStatusCode(), new \Exception($response->getBody()));
+            throw new \Exception("Error Processing Request [{$response->getBody()}]", $response->getStatusCode());
         }
     }
 
@@ -141,7 +141,7 @@ class VespaRESTClient extends AbstractClient
         } catch (\Exception $ex)
         {
             //TODO Custom Exception
-            throw new Exception("Error Processing Request", $ex->getCode(), $ex);
+            throw ex;
         }
 
         if($response->getStatusCode() == 200)
@@ -150,14 +150,14 @@ class VespaRESTClient extends AbstractClient
             $result = new DocumentResult($content);
             if($result->onlyRaw())
                 //TODO Custom Exception
-                throw new Exception("Error Processing Response. Only raw data is available.", $ex->getCode(), $ex);
+                throw new \Exception("Error Processing Response. Only raw data is available.");
 
             return $result->document();
         }
         else
         {
             //TODO Custom Exception
-            throw new Exception(get_class($this).": Error Processing Response [{$response->getStatusCode()}]", $ex->getCode(), $ex);
+            throw new \Exception("Error Processing Request [{$response->getBody()}]", $response->getStatusCode());
         }
     }
 
@@ -174,7 +174,7 @@ class VespaRESTClient extends AbstractClient
         } catch (\Exception $ex)
         {
             //TODO Custom Exception
-            throw new \Exception(get_class($this).": Error Processing Request", $ex->getCode(), $ex);
+            throw ex;
         }
 
         if($response->getStatusCode() == 200)
@@ -187,7 +187,7 @@ class VespaRESTClient extends AbstractClient
         else
         {
             //TODO Custom Exception
-            throw new Exception(get_class($this).": Error Processing Response [{$response->getStatusCode()}]", $ex->getCode(), $ex);
+            throw new \Exception("Error Processing Request [{$response->getBody()}]", $response->getStatusCode());
         }
     }
 
