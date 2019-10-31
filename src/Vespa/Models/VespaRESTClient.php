@@ -141,7 +141,7 @@ class VespaRESTClient extends AbstractClient
         } catch (\Exception $ex)
         {
             //TODO Custom Exception
-            throw ex;
+            throw $ex;
         }
 
         if($response->getStatusCode() == 200)
@@ -174,7 +174,7 @@ class VespaRESTClient extends AbstractClient
         } catch (\Exception $ex)
         {
             //TODO Custom Exception
-            throw ex;
+            throw $ex;
         }
 
         if($response->getStatusCode() == 200)
