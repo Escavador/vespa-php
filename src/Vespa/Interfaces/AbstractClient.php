@@ -17,7 +17,7 @@ abstract class AbstractClient
 	abstract public function sendDocument(DocumentDefinition $definition, AbstractDocument $document);
     abstract public function updateDocument(DocumentDefinition $definition, AbstractDocument $document);
     abstract public function removeDocument(string $scheme);
-    abstract public function getDocument(string $scheme) : AbstractDocument;
+    abstract public function getDocument(string $scheme) : VespaResult;
 
     protected $host;
     protected $headers;

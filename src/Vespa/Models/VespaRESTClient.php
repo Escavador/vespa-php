@@ -89,8 +89,7 @@ class VespaRESTClient extends AbstractClient
             $content = $response->getBody()->getContents();
             $result = new DocumentResult($content);
             if($result->onlyRaw())
-                //TODO Custom Exception
-                throw new \Exception("Error Processing Response. Only raw data is available.");
+                return $result;
 
             return $result->document();
         }
@@ -131,7 +130,7 @@ class VespaRESTClient extends AbstractClient
         }
     }
 
-    public function getDocument(string $scheme) : AbstractDocument
+    public function getDocument(string $scheme) : VespaResult
     {
         $definition = DocumentDefinition::schemeToDocument($scheme, $this->documents);
         $url = $this->host . "/document/v1/{$definition->getDocumentNamespace()}/{$definition->getDocumentType()}/docid/{$definition->getUserPercified()}";
@@ -149,8 +148,7 @@ class VespaRESTClient extends AbstractClient
             $content = $response->getBody()->getContents();
             $result = new DocumentResult($content);
             if($result->onlyRaw())
-                //TODO Custom Exception
-                throw new \Exception("Error Processing Response. Only raw data is available.");
+                return $result;
 
             return $result->document();
         }
