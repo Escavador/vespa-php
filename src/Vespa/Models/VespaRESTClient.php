@@ -28,7 +28,6 @@ class VespaRESTClient extends AbstractClient
 {
     protected $client;
     protected $max_concurrency;
-    protected $headers;
 
     public function __construct(array $headers = null)
     {
@@ -36,13 +35,7 @@ class VespaRESTClient extends AbstractClient
         $this->client = new Client();
         $this->max_concurrency = config('vespa.default.vespa_rest_client.max_concurrency', 6);
 
-        if(!$headers)
-        {
-            $this->headers = [
-                'Content-Type' => 'application/json',
-            ];
-        }
-        else
+        if($headers)
         {
             $this->headers = $headers;
         }
@@ -60,7 +53,7 @@ class VespaRESTClient extends AbstractClient
         catch (\Exception $ex)
         {
             //TODO Custom Exception
-            throw new \Exception("Error Processing Request");
+            throw new \Exception("Error Processing Search Request", $ex->getCode(), $ex);
         }
 
         if ($response->getStatusCode() == 200)
@@ -84,7 +77,7 @@ class VespaRESTClient extends AbstractClient
 
         try
         {
-            $response = $this->client->delete($url, $this->headers);
+            $response = $this->client->delete($url, ['headers' => $this->headers]);
         } catch (\Exception $ex)
         {
             //TODO Custom Exception
@@ -97,7 +90,7 @@ class VespaRESTClient extends AbstractClient
             $result = new DocumentResult($content);
             if($result->onlyRaw())
                 //TODO Custom Exception
-                new Exception("Error Processing Request", $response->getStatusCode());
+                new Exception("Error Processing Request", $response->getStatusCode(), new \Exception($response->getBody()));
 
             return $result->document();
         }
@@ -114,6 +107,7 @@ class VespaRESTClient extends AbstractClient
         try
         {
             $response = $this->client->put($url,  [
+                'headers' => $this->headers,
                 RequestOptions::JSON => array('fields' => $document->getVespaDocumentFields())
             ]);
 
@@ -133,7 +127,7 @@ class VespaRESTClient extends AbstractClient
         else
         {
             //TODO Custom Exception
-            throw new Exception("Error Processing Request", $response->getStatusCode());
+            new Exception("Error Processing Request", $response->getStatusCode(), new \Exception($response->getBody()));
         }
     }
 
@@ -143,11 +137,11 @@ class VespaRESTClient extends AbstractClient
         $url = $this->host . "/document/v1/{$definition->getDocumentNamespace()}/{$definition->getDocumentType()}/docid/{$definition->getUserPercified()}";
         try
         {
-            $response = $this->client->get($url, $this->headers);
+            $response = $this->client->get($url, ['headers' => $this->headers]);
         } catch (\Exception $ex)
         {
             //TODO Custom Exception
-            throw new \Exception(get_class($this).": Error Processing Request", $ex->getCode(), $ex);
+            throw new Exception("Error Processing Request", $ex->getCode(), $ex);
         }
 
         if($response->getStatusCode() == 200)
@@ -156,7 +150,7 @@ class VespaRESTClient extends AbstractClient
             $result = new DocumentResult($content);
             if($result->onlyRaw())
                 //TODO Custom Exception
-                throw new \Exception(get_class($this).": Error Processing Response. Only raw data is available.", $ex->getCode(), $ex);
+                throw new Exception("Error Processing Response. Only raw data is available.", $ex->getCode(), $ex);
 
             return $result->document();
         }
@@ -173,6 +167,7 @@ class VespaRESTClient extends AbstractClient
         try
         {
             $response = $this->client->post($url,  [
+                'headers' => $this->headers,
                 RequestOptions::JSON => array('fields' => $document->getVespaDocumentFields())
             ]);
 
