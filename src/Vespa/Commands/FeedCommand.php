@@ -4,6 +4,7 @@ namespace Escavador\Vespa\Commands;
 
 use Carbon\Carbon;
 use Escavador\Vespa\Common\EnumModelStatusVespa;
+use Escavador\Vespa\Common\LoggerManager;
 use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Models\DocumentDefinition;
 use Escavador\Vespa\Models\SimpleClient;
@@ -11,7 +12,8 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
-use Log;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
@@ -46,12 +48,11 @@ class FeedCommand extends Command
         parent::__construct();
         $this->vespa_status_column = config('vespa.model_columns.status', 'vespa_status');
         $this->vespa_date_column = config('vespa.model_columns.date', 'vespa_last_indexed_date');
-        $this->document_definitions = DocumentDefinition::loadDefinition();
 
+        $this->document_definitions = DocumentDefinition::loadDefinition();
         $this->vespa_client = Utils::defaultVespaClient();
 
-        //$this->logger = new Logger('vespa-log');
-        //$this->logger->pushHandler(new StreamHandler(storage_path('logs/vespa-feeder.log')), Logger::INFO);
+        $this->logger =  new LoggerManager('vespa-feeder');
     }
 
     /**
@@ -62,6 +63,7 @@ class FeedCommand extends Command
     public function handle()
     {
         $this->message('info', 'Feed was started');
+
         $start_time = Carbon::now();
 
         $all = $this->option('all');
@@ -72,18 +74,18 @@ class FeedCommand extends Command
 
         if (!is_array($models))
         {
-            $this->error('The [model] argument has to be an array.');
+            $this->message('error', 'The [model] argument has to be an array.');
             exit(1);
         }
         if (!$models && !$all)
         {
-            $this->error('At least one [model] is required to feed Vespa. If you want feed Vespa with all models, use the argument [all].');
+            $this->message('error', 'At least one [model] is required to feed Vespa. If you want feed Vespa with all models, use the argument [all].');
             exit(1);
         }
 
         if ($models && $all)
         {
-            $this->error('Only one argument ([all] or [model]) can be used at a time.');
+            $this->message('error', 'Only one argument ([all] or [model]) can be used at a time.');
             exit(1);
         }
 
@@ -95,26 +97,32 @@ class FeedCommand extends Command
 
         if (!is_numeric($limit))
         {
-            $this->error('The [limit] argument has to be a number.');
+            $this->message('error', 'The [limit] argument has to be a number.');
             exit(1);
         }
 
         if (!is_numeric($bulk))
         {
-            $this->error('The [bulk] argument has to be a number.');
+            $this->message('error', 'The [bulk] argument has to be a number.');
             exit(1);
         }
 
         if ($limit <= 0)
         {
-            $this->error('The [limit] argument has to be greater than 0.');
+            $this->message('error', 'The [limit] argument has to be greater than 0.');
             exit(1);
         }
 
         if ($bulk <= 0)
         {
-            $this->error('The [bulk] argument has to be greater than 0.');
+            $this->message('error', 'The [bulk] argument has to be greater than 0.');
             exit(1);
+        }
+
+        if ($bulk > $limit)
+        {
+            $this->message('warn', 'The [bulk] argument can not to be greater than [limit] argument. We lets ignore [bulk] argument.');
+            $bulk = $limit;
         }
 
         $this->limit = intval($limit);
@@ -122,13 +130,13 @@ class FeedCommand extends Command
 
         if ($time_out !== null && !is_numeric($time_out))
         {
-            $this->error('The [time-out] argument has to be a number.');
+            $this->message('error', 'The [time-out] argument has to be a number.');
             exit(1);
         }
 
         if ($time_out !== null && !is_numeric($time_out <= 0))
         {
-            $this->error('The [time-out] argument has to be a number.');
+            $this->message('error', 'The [time-out] argument has to be a number.');
             exit(1);
         }
 
@@ -140,7 +148,7 @@ class FeedCommand extends Command
         {
             if (!($model_definition = DocumentDefinition::findDefinition($model, null, $this->document_definitions)))
             {
-                $this->error("The model [$model] is not mapped at vespa config file.");
+                $this->message('error', "The model [$model] is not mapped at vespa config file.");
                 //go to next model
                 continue;
             }
@@ -149,7 +157,7 @@ class FeedCommand extends Command
 
             if (!Schema::hasColumn($table_name, $this->vespa_status_column))
             {
-                exit($this->message('error', "The model [$this->vespa_status_column] does not have status information on the vespa."));
+                exit($this->message('error',"The model [$this->vespa_status_column] does not have status information on the vespa."));
             }
 
             if (!Schema::hasColumn($table_name, $this->vespa_date_column))
@@ -175,7 +183,7 @@ class FeedCommand extends Command
         if($was_fed)
         {
             $total_duration = Carbon::now()->diffInSeconds($start_time);
-            $this->message('info', 'The vespa was fed in '. gmdate('H:i:s:m', $total_duration). '.');
+            $this->message('info', 'The Vespa was fed in '. gmdate('H:i:s:m', $total_duration). '.');
         }
     }
 
@@ -208,67 +216,70 @@ class FeedCommand extends Command
         );
     }
 
-    protected function message($type, $message)
+    protected function message($type = 'debug', $text)
     {
-        if ($type == 'error') {
-            Log::error($message);
-        }
-
-        if (!app()->environment('production')) {
-            if ($type == 'error') {
-                $this->error($message);
-            } else if ($type == 'info') {
-                $this->info($message);
-            }
-        }
-    }
-
-    private function pepareBulk(array $documents)
-    {
-        $bulks = [];
-        $bulk = [];
-        $size =  count($documents);
-        for ($i = 0; $i < $size; $i++)
+        if (!app()->environment('production'))
         {
-            $bulk[] = $documents[$i];
-
-            if(count($bulk) == $this->bulk || $i == $size - 1)
+            switch ($type)
             {
-                $bulks[] =  $bulk;
-                $bulk = [];
+                case 'error':
+                    $this->error($text);
+                    break;
+                case 'info':
+                    $this->info($text);
+                    break;
+                case 'warn':
+                case 'warning':
+                    $this->warn($text);
+                    break;
+                default:
+                    $this->info($text);
             }
         }
-        return $bulks;
+
+        $this->logger->log($text, $type);
     }
 
     private function process($model_definition)
     {
         $model_class = $model_definition->getModelClass();
         $model = $model_definition->getDocumentType();
-        $documents = $model_class::getVespaDocumentsToIndex($this->limit);
 
-        $count_docs = count($documents);
-
-        if ($documents !== null && !$count_docs)
+        $items = $this->limit;
+        while($items > 0)
         {
-            $this->message('info', "[$model] already up-to-date.");
-            return false;
-        }
+            if($items >= $this->bulk)
+            {
+                $items -= $this->bulk;
+                $requested_documents = $this->bulk;
+            }
+            else
+            {
+                $requested_documents = $items;
+            }
 
-        $this->message('info', "Feed vespa with [$count_docs] [$model].");
-        $documents = $this->pepareBulk($documents);
-        $indexed = [];
-        foreach ($documents as $bulk)
-        {
+            $documents = $model_class::getVespaDocumentsToIndex($requested_documents);
+
+            $count_docs = count($documents);
+
+            if ($documents !== null && $count_docs <= 0)
+            {
+                $this->message('info', "[$model] already up-to-date.");
+                return false;
+            }
+
             //Records on vespa
-            $result = $this->vespa_client->sendDocuments($model_definition, $bulk);
-            $indexed = array_merge($indexed, $result);
+            $indexed = $this->vespa_client->sendDocuments($model_definition, $documents);
+            $count_indexed = count($indexed);
+
+            $this->message('info', "Feed vespa with [$count_indexed] [$model].");
+
+            //Update model's vespa info in database
+            $model_class::markAsVespaIndexed($indexed);
         }
 
-        //Update model's vespa info in database
-        $model_class::markAsVespaIndexed($indexed);
+        $this->message('info', count($indexed)." / $this->limit [$model] was done.");
 
-        $this->message('info', count($indexed)." /$count_docs [$model] was done.");
         return true;
     }
 }

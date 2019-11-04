@@ -4,6 +4,7 @@ namespace Escavador\Vespa\Models;
 
 
 use Carbon\Carbon;
+use Escavador\Vespa\Common\LoggerManager;
 use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Interfaces\AbstractClient;
 use Escavador\Vespa\Interfaces\AbstractDocument;
@@ -34,6 +35,8 @@ class VespaRESTClient extends AbstractClient
         parent::__construct();
         $this->client = new Client();
         $this->max_concurrency = config('vespa.default.vespa_rest_client.max_concurrency', 6);
+        $this->logger =  new LoggerManager();
+
 
         if($headers)
         {
@@ -53,6 +56,7 @@ class VespaRESTClient extends AbstractClient
         catch (\Exception $ex)
         {
             //TODO Custom Exception
+            $this->logger->log($ex->getMessage(), 'error');
             throw $ex;
         }
 
@@ -67,7 +71,9 @@ class VespaRESTClient extends AbstractClient
         }
 
         //TODO Custom Exception
-        throw new \Exception("Error Processing Request [{$response->getBody()}]", $response->getStatusCode());
+        $exception_message = "Error Processing Request [{$response->getBody()}]";
+        $this->logger->log($exception_message, 'error');
+        throw new \Exception($exception_message, $response->getStatusCode());
     }
 
     public function removeDocument($scheme)
@@ -81,6 +87,7 @@ class VespaRESTClient extends AbstractClient
         } catch (\Exception $ex)
         {
             //TODO Custom Exception
+            $this->logger->log($ex->getMessage(), 'error');
             throw $ex;
         }
 
@@ -96,7 +103,9 @@ class VespaRESTClient extends AbstractClient
         else
         {
             //TODO Custom Exception
-            throw new \Exception("Error Processing Request [{$response->getBody()}]", $response->getStatusCode());
+            $exception_message = "Error Processing Request [{$response->getBody()}]";
+            $this->logger->log($exception_message, 'error');
+            throw new \Exception($exception_message, $response->getStatusCode());
         }
     }
 
@@ -113,6 +122,7 @@ class VespaRESTClient extends AbstractClient
         } catch (\Exception $ex)
         {
             //TODO Custom Exception
+            $this->logger->log($ex->getMessage(), 'error');
             throw $ex;
         }
 
@@ -126,7 +136,9 @@ class VespaRESTClient extends AbstractClient
         else
         {
             //TODO Custom Exception
-            throw new \Exception("Error Processing Request [{$response->getBody()}]", $response->getStatusCode());
+            $exception_message = "Error Processing Request [{$response->getBody()}]";
+            $this->logger->log($exception_message, 'error');
+            throw new \Exception($exception_message, $response->getStatusCode());
         }
     }
 
@@ -140,6 +152,7 @@ class VespaRESTClient extends AbstractClient
         } catch (\Exception $ex)
         {
             //TODO Custom Exception
+            $this->logger->log($ex->getMessage(), 'error');
             throw $ex;
         }
 
@@ -169,7 +182,8 @@ class VespaRESTClient extends AbstractClient
                 RequestOptions::JSON => array('fields' => $document->getVespaDocumentFields())
             ]);
 
-        } catch (\Exception $ex)
+        }
+        catch (\Exception $ex)
         {
             //TODO Custom Exception
             throw $ex;
@@ -193,9 +207,12 @@ class VespaRESTClient extends AbstractClient
     {
         $indexed = array();
 
-        $requests = function ($documents, $definition) {
+        $requests = function ($documents, $definition)
+        {
             foreach ($documents as $document)
             {
+                $scheme = "id:{$definition->getDocumentNamespace()}:{$definition->getDocumentType()}::{$document->getVespaDocumentId()}";
+                $this->logger->log("Sending document $scheme to Vespa", "info");
                 $url = $this->host . "/document/v1/{$definition->getDocumentNamespace()}/{$definition->getDocumentType()}/docid/{$document->getVespaDocumentId()}";
                 yield new Request('POST', $url, $this->headers, json_encode(['fields' =>  $document->getVespaDocumentFields()]));
             }
@@ -203,11 +220,18 @@ class VespaRESTClient extends AbstractClient
 
         $pool = new Pool($this->client, $requests($documents, $definition), [
             'concurrency' => $this->max_concurrency,
-            'fulfilled' => function (Response $response, $index) use (&$documents, &$indexed){
-                $indexed[] = $documents[$index];
+            'fulfilled' => function (Response $response, $index) use (&$documents, &$indexed, &$definition)
+            {
+                $document = $documents[$index];
+                $scheme = "id:{$definition->getDocumentNamespace()}:{$definition->getDocumentType()}::{$document->getVespaDocumentId()}";
+                $this->logger->log("Document $scheme was indexed to Vespa", 'info');
+                $indexed[] = $document;
             },
-            'rejected' => function (RequestException $reason, $index) {
-                //TODO log this
+            'rejected' => function (RequestException $reason, $index)
+            {
+                $this->logger->log("Document ".$documents[$index]->getVespaDocumentId().
+                                            " was not indexed to Vespa. Some error has occurred. ".
+                                            "[".$reason->getCode()."][".$reason->getMessage()."]", 'error');
             },
         ]);
 

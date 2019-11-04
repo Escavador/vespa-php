@@ -20,7 +20,7 @@ class DocumentDefinition
     protected $key_values;
     protected $user_pecified;
 
-    public function __construct($namespace, $type, $model_class, $model_table, $key_values = null, $user_pecified = null)
+    public function __construct($namespace, $type, $model_class, $model_table, $key_values = [], $user_pecified = null)
     {
         $this->namespace = $namespace;
         $this->type = $type;
@@ -215,36 +215,5 @@ class DocumentDefinition
             //TODO Custom Exeception
             throw $ex;
         }
-    }
-
-    /**
-     * Computes the document http uri access location.
-     * See: https://docs.vespa.ai/documentation/document-api.html#document-format
-     */
-    public static function documentToScheme(DocumentDefinition $document) : string
-    {
-        try
-        {
-            if(strlen($key_values) > 0)
-            {
-                $store_mode = 'docid';
-            }
-            else
-            {
-                $store_mode = '/';
-                foreach ($document->key_values as $key => $value)
-                {
-                    $store_mode.= KEY_VALUE_PAIRS_LOOKUP[$key].'/'.$value;
-                }
-            }
-
-            return Utils::vespaHost().'/document/v1/'.$document->getDocumentNamespace().'/'.$document->getDocumentType().'/'.$store_mode.'/'.$document->user_pecified;
-        }
-        catch(\Exception $ex)
-        {
-            //TODO Custom Exeception
-            throw $ex;
-        }
-        return '';
     }
 }
