@@ -37,7 +37,6 @@ class VespaRESTClient extends AbstractClient
         $this->max_concurrency = config('vespa.default.vespa_rest_client.max_concurrency', 6);
         $this->logger =  new LoggerManager();
 
-
         if($headers)
         {
             $this->headers = $headers;
@@ -48,6 +47,7 @@ class VespaRESTClient extends AbstractClient
     {
         try
         {
+            $this->logger->log("Realizando busca no Servidor do Vespa: ". json_encode($data), 'debug');
             $response = $this->client->post(Utils::vespaSearchEndPoint(), [
                 'headers' => $this->headers,
                 'json' => $data
@@ -168,7 +168,9 @@ class VespaRESTClient extends AbstractClient
         else
         {
             //TODO Custom Exception
-            throw new \Exception("Error Processing Request [{$response->getBody()}]", $response->getStatusCode());
+            $exception_message = "Error Processing Request [{$response->getBody()}]";
+            $this->logger->log($exception_message, 'error');
+            throw new \Exception($exception_message, $response->getStatusCode());
         }
     }
 
@@ -199,7 +201,9 @@ class VespaRESTClient extends AbstractClient
         else
         {
             //TODO Custom Exception
-            throw new \Exception("Error Processing Request [{$response->getBody()}]", $response->getStatusCode());
+            $exception_message = "Error Processing Request [{$response->getBody()}]";
+            $this->logger->log($exception_message, 'error');
+            throw new \Exception($exception_message, $response->getStatusCode());
         }
     }
 

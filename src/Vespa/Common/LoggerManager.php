@@ -24,6 +24,7 @@ class LoggerManager
         switch ($type)
         {
             case 'error':
+            case 'err':
                 $this->logger->error($message);
                 break;
             case 'info':
