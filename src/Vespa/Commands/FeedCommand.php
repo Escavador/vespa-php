@@ -246,6 +246,7 @@ class FeedCommand extends Command
         $model = $model_definition->getDocumentType();
 
         $items = $this->limit;
+        $total_indexed = 0;
         while($items > 0)
         {
             if($items >= $this->bulk)
@@ -256,6 +257,7 @@ class FeedCommand extends Command
             else
             {
                 $requested_documents = $items;
+                $items = 0;
             }
 
             $documents = $model_class::getVespaDocumentsToIndex($requested_documents);
@@ -271,6 +273,7 @@ class FeedCommand extends Command
             //Records on vespa
             $indexed = $this->vespa_client->sendDocuments($model_definition, $documents);
             $count_indexed = count($indexed);
+            $total_indexed += $count_indexed;
 
             $this->message('info', "Feed vespa with [$count_indexed] [$model].");
 
@@ -278,7 +281,7 @@ class FeedCommand extends Command
             $model_class::markAsVespaIndexed($indexed);
         }
 
-        $this->message('info', count($indexed)." / $this->limit [$model] was done.");
+        $this->message('info', "$total_indexed/$this->limit [$model] was done.");
 
         return true;
     }
