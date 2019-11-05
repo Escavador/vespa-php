@@ -231,7 +231,7 @@ class VespaRESTClient extends AbstractClient
                 $this->logger->log("Document $scheme was indexed to Vespa", 'info');
                 $indexed[] = $document;
             },
-            'rejected' => function (RequestException $reason, $index)
+            'rejected' => function (RequestException $reason, $index) use (&$documents)
             {
                 $this->logger->log("Document ".$documents[$index]->getVespaDocumentId().
                                             " was not indexed to Vespa. Some error has occurred. ".
