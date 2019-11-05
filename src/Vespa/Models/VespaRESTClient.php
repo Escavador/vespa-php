@@ -47,7 +47,7 @@ class VespaRESTClient extends AbstractClient
     {
         try
         {
-            $this->logger->log("Realizando busca no Servidor do Vespa: ". json_encode($data), 'debug');
+            $this->logger->log("Running the search on the Vespa server: ". json_encode($data), 'debug');
             $response = $this->client->post(Utils::vespaSearchEndPoint(), [
                 'headers' => $this->headers,
                 'json' => $data
