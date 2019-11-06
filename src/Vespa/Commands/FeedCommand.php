@@ -165,6 +165,8 @@ class FeedCommand extends Command
                 exit($this->message('error', "The model [$this->vespa_date_column] does not have date information on the vespa."));
             }
 
+            $this->message('info', "Feed [$model] already!");
+
             //TODO: make this async
             try
             {
@@ -183,7 +185,7 @@ class FeedCommand extends Command
         if($was_fed)
         {
             $total_duration = Carbon::now()->diffInSeconds($start_time);
-            $this->message('info', 'The Vespa was fed in '. gmdate('H:i:s:m', $total_duration). '.');
+            $this->message('info', 'The Vespa was fed in '. gmdate('H:i:s:m', $total_duration). ' with: ' . implode(',', $models) . '.');
         }
     }
 
