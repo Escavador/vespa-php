@@ -216,7 +216,6 @@ class VespaRESTClient extends AbstractClient
             foreach ($documents as $document)
             {
                 $scheme = "id:{$definition->getDocumentNamespace()}:{$definition->getDocumentType()}::{$document->getVespaDocumentId()}";
-                $this->logger->log("Sending document $scheme to Vespa", "info");
                 $url = $this->host . "/document/v1/{$definition->getDocumentNamespace()}/{$definition->getDocumentType()}/docid/{$document->getVespaDocumentId()}";
                 yield new Request('POST', $url, $this->headers, json_encode(['fields' =>  $document->getVespaDocumentFields()]));
             }
@@ -228,14 +227,14 @@ class VespaRESTClient extends AbstractClient
             {
                 $document = $documents[$index];
                 $scheme = "id:{$definition->getDocumentNamespace()}:{$definition->getDocumentType()}::{$document->getVespaDocumentId()}";
-                $this->logger->log("Document $scheme was indexed to Vespa", 'info');
+                $this->logger->log("Document $scheme was indexed to Vespa", 'debug');
                 $indexed[] = $document;
             },
-            'rejected' => function (RequestException $reason, $index) use (&$documents)
+            'rejected' => function (RequestException $reason, $index) use (&$documents, &$definition)
             {
-                $this->logger->log("Document ".$documents[$index]->getVespaDocumentId().
-                                            " was not indexed to Vespa. Some error has occurred. ".
-                                            "[".$reason->getCode()."][".$reason->getMessage()."]", 'error');
+                $this->logger->log("[$definition->getDocumentType()]: Document ".$documents[$index]->getVespaDocumentId().
+                    " was not indexed to Vespa. Some error has occurred. ".
+                    "[".$reason->getCode()."][".$reason->getMessage()."]", 'error');
             },
         ]);
 

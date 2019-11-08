@@ -59,10 +59,10 @@ class FeedCommand extends Command
      * Execute the console command.
      *
      * @return void
-    */
+     */
     public function handle()
     {
-        $this->message('info', 'Feed was started');
+        $this->message('debug', 'Feed was started');
 
         $start_time = Carbon::now();
 
@@ -97,31 +97,31 @@ class FeedCommand extends Command
 
         if (!is_numeric($limit))
         {
-            $this->message('error', 'The [limit] argument has to be a number.');
+            $this->message('error', '['.implode(',', $models) . ']: The [limit] argument has to be a number.');
             exit(1);
         }
 
         if (!is_numeric($bulk))
         {
-            $this->message('error', 'The [bulk] argument has to be a number.');
+            $this->message('error', '['.implode(',', $models) . ']: The [bulk] argument has to be a number.');
             exit(1);
         }
 
         if ($limit <= 0)
         {
-            $this->message('error', 'The [limit] argument has to be greater than 0.');
+            $this->message('error', '['.implode(',', $models) . ']: The [limit] argument has to be greater than 0.');
             exit(1);
         }
 
         if ($bulk <= 0)
         {
-            $this->message('error', 'The [bulk] argument has to be greater than 0.');
+            $this->message('error', '['.implode(',', $models) . ']: The [bulk] argument has to be greater than 0.');
             exit(1);
         }
 
         if ($bulk > $limit)
         {
-            $this->message('warn', 'The [bulk] argument can not to be greater than [limit] argument. We lets ignore [bulk] argument.');
+            $this->message('warn', '['.implode(',', $models) . ']: The [bulk] argument can not to be greater than [limit] argument. We lets ignore [bulk] argument.');
             $bulk = $limit;
         }
 
@@ -130,13 +130,13 @@ class FeedCommand extends Command
 
         if ($time_out !== null && !is_numeric($time_out))
         {
-            $this->message('error', 'The [time-out] argument has to be a number.');
+            $this->message('error', '['.implode(',', $models) . ']: The [time-out] argument has to be a number.');
             exit(1);
         }
 
         if ($time_out !== null && !is_numeric($time_out <= 0))
         {
-            $this->message('error', 'The [time-out] argument has to be a number.');
+            $this->message('error', '['.implode(',', $models) . ']: The [time-out] argument has to be a number.');
             exit(1);
         }
 
@@ -148,7 +148,7 @@ class FeedCommand extends Command
         {
             if (!($model_definition = DocumentDefinition::findDefinition($model, null, $this->document_definitions)))
             {
-                $this->message('error', "The model [$model] is not mapped at vespa config file.");
+                $this->message('error', "[$model]: The model is not mapped at Vespa config file.");
                 //go to next model
                 continue;
             }
@@ -157,15 +157,17 @@ class FeedCommand extends Command
 
             if (!Schema::hasColumn($table_name, $this->vespa_status_column))
             {
-                exit($this->message('error',"The model [$this->vespa_status_column] does not have status information on the vespa."));
+                $this->message('error', "[$model]: Table [$table_name] does not have the column [$this->vespa_status_column].");
+                exit(1);
             }
 
             if (!Schema::hasColumn($table_name, $this->vespa_date_column))
             {
-                exit($this->message('error', "The model [$this->vespa_date_column] does not have date information on the vespa."));
+                $this->message('error', "[$model]: Table [$table_name] does not have the column [$this->vespa_date_column].");
+                exit(1);
             }
 
-            $this->message('info', "Feed [$model] already!");
+            $this->message('debug', "[$model]: Feed is already!");
 
             //TODO: make this async
             try
@@ -175,7 +177,7 @@ class FeedCommand extends Command
             }
             catch (\Exception $e)
             {
-                $this->message('error', '... fail.' . ' '. $e->getMessage() );
+                $this->message('error', "[$model]: Processing failed. Error: ". $e->getMessage());
                 exit(1);
             }
 
@@ -185,7 +187,7 @@ class FeedCommand extends Command
         if($was_fed)
         {
             $total_duration = Carbon::now()->diffInSeconds($start_time);
-            $this->message('info', 'The Vespa was fed in '. gmdate('H:i:s:m', $total_duration). ' with: ' . implode(',', $models) . '.');
+            $this->message('debug', '['.implode(',', $models) . ']: Vespa was fed in '. gmdate('H:i:s:m', $total_duration));
         }
     }
 
@@ -277,13 +279,13 @@ class FeedCommand extends Command
             $count_indexed = count($indexed);
             $total_indexed += $count_indexed;
 
-            $this->message('info', "Feed vespa with [$count_indexed] [$model].");
+            $this->message('debug', "[$model]:". count($documents). " of $count_indexed were indexed in Vespa.");
 
             //Update model's vespa info in database
             $model_class::markAsVespaIndexed($indexed);
         }
 
-        $this->message('info', "$total_indexed/$this->limit [$model] was done.");
+        $this->message('info', "[$model]: $total_indexed/$this->limit was done.");
 
         return true;
     }
