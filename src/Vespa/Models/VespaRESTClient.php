@@ -210,31 +210,33 @@ class VespaRESTClient extends AbstractClient
     public function sendDocuments(DocumentDefinition $definition, $documents)
     {
         $indexed = array();
+        $document_type = $definition->getDocumentType();
+        $document_namespace =  $definition->getDocumentNamespace();
 
-        $requests = function ($documents, $definition)
+        $requests = function ($documents, $definition) use (&$document_type, &$document_namespace)
         {
             foreach ($documents as $document)
             {
-                $scheme = "id:{$definition->getDocumentNamespace()}:{$definition->getDocumentType()}::{$document->getVespaDocumentId()}";
-                $url = $this->host . "/document/v1/{$definition->getDocumentNamespace()}/{$definition->getDocumentType()}/docid/{$document->getVespaDocumentId()}";
+                $scheme = "id:{$document_namespace}:{$document_type}::{$document->getVespaDocumentId()}";
+                $url = $this->host . "/document/v1/{$document_namespace}/{$document_type}/docid/{$document->getVespaDocumentId()}";
                 yield new Request('POST', $url, $this->headers, json_encode(['fields' =>  $document->getVespaDocumentFields()]));
             }
         };
 
         $pool = new Pool($this->client, $requests($documents, $definition), [
             'concurrency' => $this->max_concurrency,
-            'fulfilled' => function (Response $response, $index) use (&$documents, &$indexed, &$definition)
+            'fulfilled' => function (Response $response, $index) use (&$documents, &$indexed, &$document_type, &$document_namespace)
             {
                 $document = $documents[$index];
-                $scheme = "id:{$definition->getDocumentNamespace()}:{$definition->getDocumentType()}::{$document->getVespaDocumentId()}";
+                $scheme = "id:{$document_namespace}:{$document_type}::{$document->getVespaDocumentId()}";
                 $this->logger->log("Document $scheme was indexed to Vespa", 'debug');
                 $indexed[] = $document;
             },
-            'rejected' => function (RequestException $reason, $index) use (&$documents, &$definition)
+            'rejected' => function (RequestException $reason, $index) use (&$documents, &$document_type, &$document_namespace)
             {
-                $this->logger->log("[$definition->getDocumentType()]: Document ".$documents[$index]->getVespaDocumentId().
+                $this->logger->log("[$document_type]: Document ".$documents[$index]->getVespaDocumentId().
                     " was not indexed to Vespa. Some error has occurred. ".
-                    "[".$reason->getCode()."][".$reason->getMessage()."]", 'error');
+                    "[".$reason->getCode()."][".$reason->getMessage()."][".$reason->getResponse()."]", 'error');
             },
         ]);
 

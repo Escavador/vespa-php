@@ -279,7 +279,7 @@ class FeedCommand extends Command
             $count_indexed = count($indexed);
             $total_indexed += $count_indexed;
 
-            $this->message('debug', "[$model]:". count($documents). " of $count_indexed were indexed in Vespa.");
+            $this->message('debug', "[$model]:". $count_indexed . " of " . count($documents) . " were indexed in Vespa.");
 
             //Update model's vespa info in database
             $model_class::markAsVespaIndexed($indexed);
