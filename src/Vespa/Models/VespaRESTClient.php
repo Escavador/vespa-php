@@ -236,7 +236,7 @@ class VespaRESTClient extends AbstractClient
             {
                 $this->logger->log("[$document_type]: Document ".$documents[$index]->getVespaDocumentId().
                     " was not indexed to Vespa. Some error has occurred. ".
-                    "[".$reason->getCode()."][".$reason->getMessage()."][".$reason->getResponse()."]", 'error');
+                    "[".$reason->getCode()."][".$reason->getMessage()."]", 'error');
             },
         ]);
 
