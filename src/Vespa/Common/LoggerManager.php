@@ -3,20 +3,18 @@
 namespace Escavador\Vespa\Common;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 
 class LoggerManager
 {
-    public function __construct($name = 'vespa')
+    protected $channel;
+
+    public function __construct()
     {
-        $sufix = Carbon::now()->format('Y-m-d');
-        $log_path = storage_path("logs/vespa-$sufix.log");
-        $handler = new StreamHandler($log_path);
-        $handler->setFormatter(new LineFormatter(null, null, true, true));
-        $this->logger = new Logger($name);
-        $this->logger->pushHandler($handler);
+        $this->channel = config('vespa.default.log.channel', 'daily');
     }
 
     public function log(string $message, string $type = 'debug')
@@ -25,17 +23,17 @@ class LoggerManager
         {
             case 'error':
             case 'err':
-                $this->logger->error($message);
+                Log::channel($this->channel)->error($message);
                 break;
             case 'info':
-                $this->logger->info($message);
+                Log::channel($this->channel)->info($message);
                 break;
             case 'warn':
             case 'warning':
-                $this->logger->warn($message);
+                Log::channel($this->channel)->warn($message);
                 break;
             default:
-                $this->logger->debug($message);
+                Log::channel($this->channel)->debug($message);
         }
     }
 }

@@ -52,7 +52,7 @@ class FeedCommand extends Command
         $this->document_definitions = DocumentDefinition::loadDefinition();
         $this->vespa_client = Utils::defaultVespaClient();
 
-        $this->logger =  new LoggerManager('vespa-feeder');
+        $this->logger =  new LoggerManager();
     }
 
     /**
