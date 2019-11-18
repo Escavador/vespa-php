@@ -4,8 +4,9 @@ namespace Escavador\Vespa\Commands;
 
 use Carbon\Carbon;
 use Escavador\Vespa\Common\EnumModelStatusVespa;
-use Escavador\Vespa\Common\LoggerManager;
+use Escavador\Vespa\Common\LogManager;
 use Escavador\Vespa\Common\Utils;
+use Escavador\Vespa\Common\VespaExceptionSubject;
 use Escavador\Vespa\Models\DocumentDefinition;
 use Escavador\Vespa\Models\SimpleClient;
 use Illuminate\Console\Command;
@@ -52,7 +53,7 @@ class FeedCommand extends Command
         $this->document_definitions = DocumentDefinition::loadDefinition();
         $this->vespa_client = Utils::defaultVespaClient();
 
-        $this->logger =  new LoggerManager();
+        $this->logger =  new LogManager();
     }
 
     /**
@@ -177,6 +178,7 @@ class FeedCommand extends Command
             }
             catch (\Exception $e)
             {
+                VespaExceptionSubject::notifyObservers($e);
                 $this->message('error', "[$model]: Processing failed. Error: ". $e->getMessage());
                 exit(1);
             }

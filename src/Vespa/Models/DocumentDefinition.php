@@ -3,6 +3,7 @@
 namespace Escavador\Vespa\Models;
 
 use Escavador\Vespa\Common\Utils;
+use Escavador\Vespa\Common\VespaExceptionSubject;
 use Escavador\Vespa\Interfaces\AbstractDocument;
 
 class DocumentDefinition
@@ -213,6 +214,7 @@ class DocumentDefinition
         catch(\Exception $ex)
         {
             //TODO Custom Exeception
+            VespaExceptionSubject::notifyObservers($ex);
             throw $ex;
         }
     }

@@ -2,6 +2,7 @@
 
 namespace Escavador\Vespa\Models;
 
+use Escavador\Vespa\Common\ExceptionObserverManager;
 use Escavador\Vespa\Interfaces\AbstractDocument;
 use Escavador\Vespa\Interfaces\VespaResult;
 
@@ -15,6 +16,11 @@ abstract class AbstractChild extends VespaResult
     {
         parent::__construct(json_encode($child), $only_raw);
         //if json cannot be decoded
-        if($child === null) throw new \Exception("Invalid format to response child.");
+        if($child === null)
+        {
+            $e = new \Exception("Invalid format to response child.");
+            ExceptionObserverManager::notify($e);
+            throw $e;
+        }
     }
 }

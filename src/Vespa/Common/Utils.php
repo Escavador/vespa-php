@@ -15,8 +15,12 @@ class Utils
             $host = 'http://'. $host;
 
         if (filter_var($host, FILTER_VALIDATE_URL) === FALSE)
+        {
             //TODO
-            throw new \Exception('Invalid Vespa Host');
+            $e = new \Exception('Invalid Vespa Host');
+            VespaExceptionSubject::notifyObservers($e);
+            throw $e;
+        }
 
         return $host;
     }

@@ -4,8 +4,9 @@ namespace Escavador\Vespa\Models;
 
 
 use Carbon\Carbon;
-use Escavador\Vespa\Common\LoggerManager;
+use Escavador\Vespa\Common\LogManager;
 use Escavador\Vespa\Common\Utils;
+use Escavador\Vespa\Common\VespaExceptionSubject;
 use Escavador\Vespa\Interfaces\AbstractClient;
 use Escavador\Vespa\Interfaces\AbstractDocument;
 use Escavador\Vespa\Interfaces\VespaResult;
@@ -35,7 +36,7 @@ class VespaRESTClient extends AbstractClient
         parent::__construct();
         $this->client = new Client();
         $this->max_concurrency = config('vespa.default.vespa_rest_client.max_concurrency', 6);
-        $this->logger =  new LoggerManager();
+        $this->logger =  new LogManager();
 
         if($headers)
         {
@@ -57,6 +58,7 @@ class VespaRESTClient extends AbstractClient
         {
             //TODO Custom Exception
             $this->logger->log($ex->getMessage(), 'error');
+            VespaExceptionSubject::notifyObservers($ex);
             throw $ex;
         }
 
@@ -73,7 +75,9 @@ class VespaRESTClient extends AbstractClient
         //TODO Custom Exception
         $exception_message = "Error Processing Request [{$response->getBody()}]";
         $this->logger->log($exception_message, 'error');
-        throw new \Exception($exception_message, $response->getStatusCode());
+        $e = new \Exception($exception_message, $response->getStatusCode());
+        VespaExceptionSubject::notifyObservers($e);
+        throw $e;
     }
 
     public function removeDocument($scheme)
@@ -88,6 +92,7 @@ class VespaRESTClient extends AbstractClient
         {
             //TODO Custom Exception
             $this->logger->log($ex->getMessage(), 'error');
+            VespaExceptionSubject::notifyObservers($ex);
             throw $ex;
         }
 
@@ -105,7 +110,9 @@ class VespaRESTClient extends AbstractClient
             //TODO Custom Exception
             $exception_message = "Error Processing Request [{$response->getBody()}]";
             $this->logger->log($exception_message, 'error');
-            throw new \Exception($exception_message, $response->getStatusCode());
+            $e = new \Exception($exception_message, $response->getStatusCode());
+            VespaExceptionSubject::notifyObservers($e);
+            throw $e;
         }
     }
 
@@ -123,6 +130,7 @@ class VespaRESTClient extends AbstractClient
         {
             //TODO Custom Exception
             $this->logger->log($ex->getMessage(), 'error');
+            VespaExceptionSubject::notifyObservers($ex);
             throw $ex;
         }
 
@@ -138,7 +146,9 @@ class VespaRESTClient extends AbstractClient
             //TODO Custom Exception
             $exception_message = "Error Processing Request [{$response->getBody()}]";
             $this->logger->log($exception_message, 'error');
-            throw new \Exception($exception_message, $response->getStatusCode());
+            $e = new \Exception($exception_message, $response->getStatusCode());
+            VespaExceptionSubject::notifyObservers($e);
+            throw $e;
         }
     }
 
@@ -153,6 +163,7 @@ class VespaRESTClient extends AbstractClient
         {
             //TODO Custom Exception
             $this->logger->log($ex->getMessage(), 'error');
+            VespaExceptionSubject::notifyObservers($ex);
             throw $ex;
         }
 
@@ -170,7 +181,9 @@ class VespaRESTClient extends AbstractClient
             //TODO Custom Exception
             $exception_message = "Error Processing Request [{$response->getBody()}]";
             $this->logger->log($exception_message, 'error');
-            throw new \Exception($exception_message, $response->getStatusCode());
+            $e = new \Exception($exception_message, $response->getStatusCode());
+            VespaExceptionSubject::notifyObservers($e);
+            throw $e;
         }
     }
 
@@ -188,6 +201,7 @@ class VespaRESTClient extends AbstractClient
         catch (\Exception $ex)
         {
             //TODO Custom Exception
+            VespaExceptionSubject::notifyObservers($ex);
             throw $ex;
         }
 
@@ -203,7 +217,9 @@ class VespaRESTClient extends AbstractClient
             //TODO Custom Exception
             $exception_message = "Error Processing Request [{$response->getBody()}]";
             $this->logger->log($exception_message, 'error');
-            throw new \Exception($exception_message, $response->getStatusCode());
+            $e = new \Exception($exception_message, $response->getStatusCode());
+            VespaExceptionSubject::notifyObservers($e);
+            throw $e;
         }
     }
 
@@ -234,9 +250,11 @@ class VespaRESTClient extends AbstractClient
             },
             'rejected' => function (RequestException $reason, $index) use (&$documents, &$document_type, &$document_namespace)
             {
-                $this->logger->log("[$document_type]: Document ".$documents[$index]->getVespaDocumentId().
-                    " was not indexed to Vespa. Some error has occurred. ".
-                    "[".$reason->getCode()."][".$reason->getMessage()."]", 'error');
+                $e = new \Exception("[$document_type]: Document ".$documents[$index]->getVespaDocumentId().
+                                            " was not indexed to Vespa. Some error has occurred. ".
+                                            "[".$reason->getCode()."][".$reason->getMessage()."]");
+                $this->logger->log($e->getMessage(), 'error');
+                VespaExceptionSubject::notifyObservers($e);
             },
         ]);
 

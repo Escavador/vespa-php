@@ -2,6 +2,7 @@
 
 namespace Escavador\Vespa\Interfaces;
 
+use Escavador\Vespa\Common\ExceptionObserverManager;
 use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Interfaces\AbstractDocument;
 use Escavador\Vespa\Models\DocumentDefinition;
@@ -59,8 +60,12 @@ abstract class VespaResult
     public final function getAttribute($attribute)
     {
         if($this->onlyRaw())
+        {
             //TODO Custom Exeception
-            throw new \Exception("This response was not normalized. Please see the \"raw\" property");
+            $e = new \Exception("This response was not normalized. Please see the \"raw\" property")
+            ExceptionObserverManager::notify($e);
+            throw $e;
+        }
 
         if (!$attribute || !property_exists($this, $attribute)) {
             return null;

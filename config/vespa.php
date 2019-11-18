@@ -43,5 +43,9 @@ return array(
     'log' => [
         'channel' => 'vespa'
     ],
-    'stop_words' => []
+    'observers' => [
+        'exceptions' => [
+
+        ]
+    ]
 );
