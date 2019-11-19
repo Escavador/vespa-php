@@ -226,6 +226,7 @@ class VespaRESTClient extends AbstractClient
     public function sendDocuments(DocumentDefinition $definition, $documents)
     {
         $indexed = array();
+        $not_indexed = array();
         $document_type = $definition->getDocumentType();
         $document_namespace =  $definition->getDocumentNamespace();
 
@@ -244,13 +245,15 @@ class VespaRESTClient extends AbstractClient
             'fulfilled' => function (Response $response, $index) use (&$documents, &$indexed, &$document_type, &$document_namespace)
             {
                 $document = $documents[$index];
+                $indexed[] = $document;
                 $scheme = "id:{$document_namespace}:{$document_type}::{$document->getVespaDocumentId()}";
                 $this->logger->log("Document $scheme was indexed to Vespa", 'debug');
-                $indexed[] = $document;
             },
             'rejected' => function (RequestException $reason, $index) use (&$documents, &$document_type, &$document_namespace)
             {
-                $e = new \Exception("[$document_type]: Document ".$documents[$index]->getVespaDocumentId().
+                $document = $documents[$index];
+                $not_indexed[] = $document;
+                $e = new \Exception("[$document_type]: Document ".$document->getVespaDocumentId().
                                             " was not indexed to Vespa. Some error has occurred. ".
                                             "[".$reason->getCode()."][".$reason->getMessage()."]");
                 $this->logger->log($e->getMessage(), 'error');
@@ -264,6 +267,9 @@ class VespaRESTClient extends AbstractClient
         // Force the pool of requests to complete.
         $promise->wait();
 
-        return $indexed;
+        return [
+            "indexed" => $indexed,
+            "not_indexed" => $not_indexed
+        ];
     }
 }

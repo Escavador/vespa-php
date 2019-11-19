@@ -277,7 +277,10 @@ class FeedCommand extends Command
             }
 
             //Records on vespa
-            $indexed = $this->vespa_client->sendDocuments($model_definition, $documents);
+            $result = $this->vespa_client->sendDocuments($model_definition, $documents);
+            $indexed = $result["indexed"];
+            $not_indexed = $result["not_indexed"];
+
             $count_indexed = count($indexed);
             $total_indexed += $count_indexed;
 
@@ -285,6 +288,7 @@ class FeedCommand extends Command
 
             //Update model's vespa info in database
             $model_class::markAsVespaIndexed($indexed);
+            $model_class::markAsVespaNotIndexed($not_indexed);
         }
 
         $this->message('info', "[$model]: $total_indexed/$this->limit was done.");
