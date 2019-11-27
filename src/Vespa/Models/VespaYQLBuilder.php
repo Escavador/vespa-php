@@ -237,6 +237,22 @@ class VespaYQLBuilder
         return $this;
     }
 
+    public function orderBy($field, $order = "ASC") : VespaYQLBuilder
+    {
+        if(strtoupper($order) != "DESC" and strtoupper($order) != "ASC")
+        {
+            // Custom Exception
+            throw new \Exception("Syntax Error. The property \"order by\" should be \"DESC\" or \"ASC\"");
+        }
+
+        if(!isset($this->orderBy))
+            $this->orderBy = [];
+
+        $this->orderBy[$field] =  strtoupper($order);
+
+        return $this;
+    }
+
     public function __toString()
     {
         $limit = isset($this->limit)? $this->limit : null;
@@ -247,13 +263,27 @@ class VespaYQLBuilder
         $search_condition_groups = [];
         $sources = '';
         if(!isset($this->sources) || count($this->sources) === 0)
+        {
             $sources = ' SOURCES *';
+        }
         else
         {
             if (count($this->sources) > 1)
                 $sources = ' SOURCES ';
 
             $sources .= implode(', ', $this->sources);
+        }
+
+        $orderBy = null;
+        if(isset($this->orderBy) && count($this->orderBy) > 0)
+        {
+            $aux_orderBy = [];
+            foreach ($this->orderBy as $key => $value)
+            {
+                $aux_orderBy[] = "$key $value";
+            }
+
+            $orderBy = "  ORDER BY " . implode(", ", $aux_orderBy);
         }
 
         $yql = "SELECT $fields FROM $sources ";
@@ -292,6 +322,7 @@ class VespaYQLBuilder
         if($search_conditions || $search_condition_groups) $yql .= " WHERE ";
         if($search_conditions) $yql .= implode(' AND ', $search_conditions)." ";
         if($search_condition_groups) $yql .= implode(' ', $search_condition_groups)." ";
+        if($orderBy != null) $yql .= $orderBy;
         if($limit != null) $yql .= " LIMIT $limit";
         if($offset != null) $yql .= " OFFSET $offset";
 
