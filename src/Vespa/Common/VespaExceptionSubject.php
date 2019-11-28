@@ -4,11 +4,12 @@
 namespace Escavador\Vespa\Common;
 
 
+use Escavador\Vespa\Exception\VespaException;
 use Escavador\Vespa\Interfaces\VespaExceptionObserver;
 
 final class VespaExceptionSubject
 {
-    public final static function notifyObservers($expection)
+    public final static function notifyObservers(VespaException $expection)
     {
         $observers = config('vespa.observers.exceptions', []);
 

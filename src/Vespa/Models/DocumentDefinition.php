@@ -4,6 +4,7 @@ namespace Escavador\Vespa\Models;
 
 use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Common\VespaExceptionSubject;
+use Escavador\Vespa\Exception\VespaException;
 use Escavador\Vespa\Interfaces\AbstractDocument;
 
 class DocumentDefinition
@@ -172,12 +173,15 @@ class DocumentDefinition
     public static function findAllTypes($definitions = null)
     {
         if($definitions == null)
+        {
             $definitions = DocumentDefinition::loadDefinition();
+        }
 
         $all_type = [];
         foreach ($definitions as $definition)
         {
-            if (!in_array($definition->getDocumentType(), $all_type)) {
+            if (!in_array($definition->getDocumentType(), $all_type))
+            {
                 $all_type[] = $definition->getDocumentType();
             }
         }
@@ -213,9 +217,9 @@ class DocumentDefinition
         }
         catch(\Exception $ex)
         {
-            //TODO Custom Exeception
-            VespaExceptionSubject::notifyObservers($ex);
-            throw $ex;
+            $e = new VespaException("Failed to convert schema '$scheme' to a document.");
+            VespaExceptionSubject::notifyObservers($e);
+            throw $e;
         }
     }
 }

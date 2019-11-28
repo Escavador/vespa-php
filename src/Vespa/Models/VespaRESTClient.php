@@ -7,6 +7,11 @@ use Carbon\Carbon;
 use Escavador\Vespa\Common\LogManager;
 use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Common\VespaExceptionSubject;
+use Escavador\Vespa\Exception\VespaFailDeleteDocumentException;
+use Escavador\Vespa\Exception\VespaFailGetDocumentException;
+use Escavador\Vespa\Exception\VespaFailSearchException;
+use Escavador\Vespa\Exception\VespaFailSendDocumentException;
+use Escavador\Vespa\Exception\VespaFailUpdateDocumentException;
 use Escavador\Vespa\Interfaces\AbstractClient;
 use Escavador\Vespa\Interfaces\AbstractDocument;
 use Escavador\Vespa\Interfaces\VespaResult;
@@ -56,10 +61,10 @@ class VespaRESTClient extends AbstractClient
         }
         catch (\Exception $ex)
         {
-            //TODO Custom Exception
-            $this->logger->log($ex->getMessage(), 'error');
-            VespaExceptionSubject::notifyObservers($ex);
-            throw $ex;
+            $e = new VespaFailSearchException($data, $ex->getCode(), $ex->getMessage());
+            $this->logger->log($e->getMessage(), 'error');
+            VespaExceptionSubject::notifyObservers($e);
+            throw $e;
         }
 
         if ($response->getStatusCode() == 200)
@@ -72,10 +77,8 @@ class VespaRESTClient extends AbstractClient
                 return new SearchResult($content);
         }
 
-        //TODO Custom Exception
-        $exception_message = "Error Processing Request [{$response->getBody()}]";
-        $this->logger->log($exception_message, 'error');
-        $e = new \Exception($exception_message, $response->getStatusCode());
+        $e = new VespaFailSearchException($data, $response->getStatusCode(), $response->getBody()->getContents());
+        $this->logger->log($e->getMessage(), 'error');
         VespaExceptionSubject::notifyObservers($e);
         throw $e;
     }
@@ -90,10 +93,10 @@ class VespaRESTClient extends AbstractClient
             $response = $this->client->delete($url, ['headers' => $this->headers]);
         } catch (\Exception $ex)
         {
-            //TODO Custom Exception
-            $this->logger->log($ex->getMessage(), 'error');
-            VespaExceptionSubject::notifyObservers($ex);
-            throw $ex;
+            $e = new VespaFailDeleteDocumentException($definition, $scheme, $ex->getCode(), $ex->getMessage());
+            $this->logger->log($e->getMessage(), 'error');
+            VespaExceptionSubject::notifyObservers($e);
+            throw $e;
         }
 
         if($response->getStatusCode() == 200)
@@ -107,10 +110,8 @@ class VespaRESTClient extends AbstractClient
         }
         else
         {
-            //TODO Custom Exception
-            $exception_message = "Error Processing Request [{$response->getBody()}]";
-            $this->logger->log($exception_message, 'error');
-            $e = new \Exception($exception_message, $response->getStatusCode());
+            $e = new VespaFailDeleteDocumentException($definition, $scheme, $response->getStatusCode(), $response->getBody()->getContents());
+            $this->logger->log($e->getMessage(), 'error');
             VespaExceptionSubject::notifyObservers($e);
             throw $e;
         }
@@ -128,10 +129,10 @@ class VespaRESTClient extends AbstractClient
 
         } catch (\Exception $ex)
         {
-            //TODO Custom Exception
-            $this->logger->log($ex->getMessage(), 'error');
-            VespaExceptionSubject::notifyObservers($ex);
-            throw $ex;
+            $e = new VespaFailUpdateDocumentException($definition, $document, $response->getStatusCode(), $response->getBody()->getContents());
+            $this->logger->log($e->getMessage(), 'error');
+            VespaExceptionSubject::notifyObservers($e);
+            throw $e;
         }
 
         if($response->getStatusCode() == 200)
@@ -143,10 +144,8 @@ class VespaRESTClient extends AbstractClient
         }
         else
         {
-            //TODO Custom Exception
-            $exception_message = "Error Processing Request [{$response->getBody()}]";
-            $this->logger->log($exception_message, 'error');
-            $e = new \Exception($exception_message, $response->getStatusCode());
+            $e = new VespaFailUpdateDocumentException($definition, $document, $response->getStatusCode(), $response->getBody()->getContents());
+            $this->logger->log($e->getMessage(), 'error');
             VespaExceptionSubject::notifyObservers($e);
             throw $e;
         }
@@ -161,10 +160,10 @@ class VespaRESTClient extends AbstractClient
             $response = $this->client->get($url, ['headers' => $this->headers]);
         } catch (\Exception $ex)
         {
-            //TODO Custom Exception
-            $this->logger->log($ex->getMessage(), 'error');
-            VespaExceptionSubject::notifyObservers($ex);
-            throw $ex;
+            $e = new VespaFailGetDocumentException($definition, $scheme, $ex->getCode(), $ex->getMessage());
+            $this->logger->log($e->getMessage(), 'error');
+            VespaExceptionSubject::notifyObservers($e);
+            throw $e;
         }
 
         if($response->getStatusCode() == 200)
@@ -178,10 +177,8 @@ class VespaRESTClient extends AbstractClient
         }
         else
         {
-            //TODO Custom Exception
-            $exception_message = "Error Processing Request [{$response->getBody()}]";
-            $this->logger->log($exception_message, 'error');
-            $e = new \Exception($exception_message, $response->getStatusCode());
+            $e = new VespaFailGetDocumentException($definition, $scheme, $response->getStatusCode(), $response->getBody()->getContents());
+            $this->logger->log($e->getMessage(), 'error');
             VespaExceptionSubject::notifyObservers($e);
             throw $e;
         }
@@ -200,9 +197,10 @@ class VespaRESTClient extends AbstractClient
         }
         catch (\Exception $ex)
         {
-            //TODO Custom Exception
-            VespaExceptionSubject::notifyObservers($ex);
-            throw $ex;
+            $e = new VespaFailSendDocumentException($definition, $document, $ex->getCode(),  $ex->getMessage());
+            $this->logger->log($e->getMessage(), 'error');
+            VespaExceptionSubject::notifyObservers($e);
+            throw $e;
         }
 
         if($response->getStatusCode() == 200)
@@ -214,10 +212,8 @@ class VespaRESTClient extends AbstractClient
         }
         else
         {
-            //TODO Custom Exception
-            $exception_message = "Error Processing Request [{$response->getBody()}]";
-            $this->logger->log($exception_message, 'error');
-            $e = new \Exception($exception_message, $response->getStatusCode());
+            $e = new VespaFailSendDocumentException($definition, $document, $response->getStatusCode(),  $response->getBody()->getContents());
+            $this->logger->log($e->getMessage(), 'error');
             VespaExceptionSubject::notifyObservers($e);
             throw $e;
         }
@@ -253,9 +249,7 @@ class VespaRESTClient extends AbstractClient
             {
                 $document = $documents[$index];
                 $not_indexed[] = $document;
-                $e = new \Exception("[$document_type]: Document ".$document->getVespaDocumentId().
-                                            " was not indexed to Vespa. Some error has occurred. ".
-                                            "[".$reason->getCode()."][".$reason->getMessage()."]");
+                $e = new VespaFailSendDocumentException($definition, $document, $reason->getCode(), $reason->getMessage());
                 $this->logger->log($e->getMessage(), 'error');
                 VespaExceptionSubject::notifyObservers($e);
             },

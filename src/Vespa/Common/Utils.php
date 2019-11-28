@@ -2,6 +2,7 @@
 
 namespace Escavador\Vespa\Common;
 
+use Escavador\Vespa\Exception\VespaInvalidHostException;
 use Escavador\Vespa\Interfaces\AbstractClient;
 use Escavador\Vespa\Models\Document;
 use Escavador\Vespa\Models\VespaRESTClient;
@@ -16,8 +17,7 @@ class Utils
 
         if (filter_var($host, FILTER_VALIDATE_URL) === FALSE)
         {
-            //TODO
-            $e = new \Exception('Invalid Vespa Host');
+            $e = new VespaInvalidHostException();
             VespaExceptionSubject::notifyObservers($e);
             throw $e;
         }

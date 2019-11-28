@@ -3,6 +3,7 @@
 namespace Escavador\Vespa\Models;
 
 use Escavador\Vespa\Common\VespaExceptionSubject;
+use Escavador\Vespa\Exception\VespaException;
 use Escavador\Vespa\Interfaces\AbstractDocument;
 use Escavador\Vespa\Interfaces\VespaResult;
 
@@ -42,8 +43,7 @@ class DocumentResult  extends VespaResult
         $this->document_definition = DocumentDefinition::schemeToDocument($result->id);
         if(!$this->document_definition || !$this->document_definition->getModelClass())
         {
-            //TODO Custom Exception
-            $e = new \Exception("Could not find a document definition for this Vespa response.");
+            $e = new VespaException("Could not find a document definition for this Vespa response.");
             VespaExceptionSubject::notifyObservers($e);
             throw $e;
         }

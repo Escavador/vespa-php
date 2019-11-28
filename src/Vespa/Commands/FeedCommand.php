@@ -7,6 +7,7 @@ use Escavador\Vespa\Common\EnumModelStatusVespa;
 use Escavador\Vespa\Common\LogManager;
 use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Common\VespaExceptionSubject;
+use Escavador\Vespa\Exception\VespaException;
 use Escavador\Vespa\Models\DocumentDefinition;
 use Escavador\Vespa\Models\SimpleClient;
 use Illuminate\Console\Command;
@@ -176,10 +177,11 @@ class FeedCommand extends Command
                 $this->process($model_definition);
                 $was_fed = true;
             }
-            catch (\Exception $e)
+            catch (\Exception $ex)
             {
+                $e = new VespaException("[$model]: Processing failed. Error: ". $ex->getMessage());
                 VespaExceptionSubject::notifyObservers($e);
-                $this->message('error', "[$model]: Processing failed. Error: ". $e->getMessage());
+                $this->message('error', $e->getMessage());
                 exit(1);
             }
 
