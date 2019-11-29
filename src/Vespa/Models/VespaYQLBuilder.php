@@ -179,6 +179,8 @@ class VespaYQLBuilder
 
     public function addGroupCondition($term, string $field = 'default', $operator = 'CONTAINS', $group_name = null, $logical_operator = 'OR', bool $stemming = null) : VespaYQLBuilder
     {
+        $term = $this->removeQuotes($term);
+
         switch (gettype($term))
         {
             case "boolean": $term = json_encode($term); break;
