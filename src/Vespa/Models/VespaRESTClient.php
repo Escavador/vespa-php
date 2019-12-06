@@ -245,7 +245,7 @@ class VespaRESTClient extends AbstractClient
                 $scheme = "id:{$document_namespace}:{$document_type}::{$document->getVespaDocumentId()}";
                 $this->logger->log("Document $scheme was indexed to Vespa", 'debug');
             },
-            'rejected' => function (RequestException $reason, $index) use (&$documents, &$document_type, &$document_namespace)
+            'rejected' => function (RequestException $reason, $index) use (&$definition, &$documents, &$document_type, &$document_namespace)
             {
                 $document = $documents[$index];
                 $not_indexed[] = $document;
