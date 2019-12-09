@@ -2,6 +2,7 @@
 
 namespace Escavador\Vespa\Models;
 
+use Escavador\Vespa\Exception\VespaException;
 use Escavador\Vespa\Interfaces\AbstractClient;
 use Escavador\Vespa\Interfaces\VespaResult;
 
@@ -37,6 +38,49 @@ class VespaYQLBuilder
         return $this->createGroupCondition($field, $operator, "([{'stem': ".json_encode($stemming)."}]'$term')", $group_name, $logical_operator);
     }
 
+    public function addWeakAndCondition(string $term, string $field = 'default', $group_name = null, int $target_num_hits = null, $logical_operator = 'AND') : VespaYQLBuilder
+    {
+        $tokens = $this->splitTerm($term);
+
+        $aux_tokens = [];
+        $not_tokens = [];
+        for($i = 0; $i < count($tokens); $i ++)
+        {
+            $tokens[$i] = $this->removeQuotes($tokens[$i]);
+
+            //If the token is empty, ignore it
+            if($tokens[$i] == '')
+            {
+                continue;
+            }
+
+            //if the token start with minus signal, put it in another array
+            if(strpos($tokens[$i], '-') === 0)
+            {
+                $not_tokens[] = substr($tokens[$i], 1, strlen($tokens[$i]));
+                continue;
+            }
+
+            $aux_tokens[] = $tokens[$i];
+        }
+
+        if($aux_tokens == 0)
+        {
+            throw new VespaInvalidYQLQuery("");
+        }
+
+        $aux_tokens = "phrase('".implode($aux_tokens, "', '")."')";
+        $this->createWeakAnd($aux_tokens, $field, $group_name, $target_num_hits, $logical_operator);
+
+        if($not_tokens != null && count($not_tokens) > 0)
+        {
+            $not_tokens = "phrase('".implode($not_tokens, "', '")."')";
+            $this->createWeakAnd($not_tokens, $field, "NOT 1", $target_num_hits, "AND !");
+        }
+
+        return $this;
+    }
+
     public function addTokenizeCondition(string $term, string $field = 'default', $group_name = null, $logical_operator = "AND", bool $stemming = null) : VespaYQLBuilder
     {
         $term = $this->removeQuotes($term);
@@ -47,6 +91,13 @@ class VespaYQLBuilder
         for($i = 0; $i < count($tokens); $i ++)
         {
             $tokens[$i] = $this->removeQuotes($tokens[$i]);
+
+            //If the token is empty, ignore it
+            if($tokens[$i] == '')
+            {
+                continue;
+            }
+
             //if the token start with minus signal, put it in another array
             if(strpos($tokens[$i], '-') === 0)
             {
@@ -321,9 +372,10 @@ class VespaYQLBuilder
                 $start = false;
             }
         }
-        if($search_conditions || $search_condition_groups) $yql .= " WHERE ";
+        if($search_conditions || $search_condition_groups || $weakand_groups) $yql .= " WHERE ";
         if($search_conditions) $yql .= implode(' AND ', $search_conditions)." ";
         if($search_condition_groups) $yql .= implode(' ', $search_condition_groups)." ";
+        $yql .= $this->formatWeakAndGroups($search_conditions || $search_condition_groups);
         if($orderBy != null) $yql .= $orderBy;
         if($limit != null) $yql .= " LIMIT $limit";
         if($offset != null) $yql .= " OFFSET $offset";
@@ -332,10 +384,72 @@ class VespaYQLBuilder
         return $yql;
     }
 
+    private function formatWeakAndGroups($condition_before = false)
+    {
+        $formatedWeakAndGroups = [];
+        if(!isset($this->weakand_groups))
+        {
+            $this->weakand_groups = [];
+        }
+
+        $str_group = "";
+
+        foreach ($this->weakand_groups as $group)
+        {
+            if($condition_before) {
+                $str_group = $group["head"]["logical_operator"];
+            }
+
+            $str_group .= " (";
+            if($group["head"]["target_num_hits"])
+            {
+                $str_group .= "[{'targetNumHits': {$group["head"]["target_num_hits"]}}]";
+            }
+            $str_group .= "weakAnd( ";
+            $group_body = [];
+            foreach ($group["body"] as $value)
+            {
+                $group_body[] = "$value[0] $value[1] $value[2]";
+            }
+            $str_group .= implode(", ", $group_body);
+            $str_group .= "))";
+
+            $formatedWeakAndGroups[] = $str_group;
+            $condition_before = true;
+        }
+
+        return implode("", $formatedWeakAndGroups);
+    }
+
+    private function createWeakAnd(string $term, string $field = 'default', $group_name = null, int $target_num_hits = null, $logical_operator = 'AND')
+    {
+        $operator = 'CONTAINS';
+        if(!isset($this->weakand_groups)) $this->weakand_groups = [];
+        if($group_name === null) $group_name = $this->createGroupName($this->weakand_groups);
+        if(is_string($group_name) && is_numeric($group_name)) $group_name = intval($group_name);
+        while (array_key_exists($group_name, $this->weakand_groups)) $name++;
+        $size = count($this->weakand_groups);
+
+        if($group_name < 0 && $size > 0) //put condition in the last group created
+        {
+            $group_name = array_keys($this->weakand_groups)[$size - 1];
+        }
+        else if($group_name === null || $group_name === '' || $group_name < 0) //add new group
+        {
+            $group_name = $size;
+        }
+
+        $this->weakand_groups[$group_name]["head"]["logical_operator"] = $logical_operator;
+        if($target_num_hits > 0) $this->weakand_groups[$group_name]["head"]["target_num_hits"] = $target_num_hits;
+        $this->weakand_groups[$group_name]["body"][] = [$field, $operator, $term];
+
+        return $this;
+    }
+
     private function createGroupCondition(string $field, string $operator, $term, $group_name= null, $logical_operator)
     {
-        if($group_name === null) $group_name = $this->createGroupName();
         if(!isset($this->search_condition_groups)) $this->search_condition_groups = [];
+        if($group_name === null) $group_name = $this->createGroupName($this->search_condition_groups);
         if(is_string($group_name) && is_numeric($group_name)) $group_name = intval($group_name);
         $size = count($this->search_condition_groups);
 
@@ -356,11 +470,11 @@ class VespaYQLBuilder
         return $this;
     }
 
-    private function createGroupName()
+    private function createGroupName($group)
     {
-        if (!isset($this->search_condition_groups)) return 0;
-        $name = count($this->search_condition_groups);
-        while (array_key_exists($name, $this->search_condition_groups)) $name++;
+        if (!isset($group)) return 0;
+        $name = count($group);
+        while (array_key_exists($name, $group)) $name++;
         return $name;
     }
 
