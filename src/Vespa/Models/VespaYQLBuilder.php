@@ -38,44 +38,42 @@ class VespaYQLBuilder
         return $this->createGroupCondition($field, $operator, "([{'stem': ".json_encode($stemming)."}]'$term')", $group_name, $logical_operator);
     }
 
-    public function addWeakAndCondition(string $term, string $field = 'default', $group_name = null, int $target_num_hits = null, $logical_operator = 'AND') : VespaYQLBuilder
+    public function addWandCondition(string $term, string $field = 'default', $group_name = null, int $target_num_hits = null, $score_threshold = null, $logical_operator = 'AND') : VespaYQLBuilder
     {
         $tokens = $this->splitTerm($term);
+        [$tokens, $not_tokens] = $this->tokenizeTerm($term, true);
 
-        $aux_tokens = [];
-        $not_tokens = [];
-        for($i = 0; $i < count($tokens); $i ++)
-        {
-            $tokens[$i] = $this->removeQuotes($tokens[$i]);
-
-            //If the token is empty, ignore it
-            if($tokens[$i] == '')
-            {
-                continue;
-            }
-
-            //if the token start with minus signal, put it in another array
-            if(strpos($tokens[$i], '-') === 0)
-            {
-                $not_tokens[] = substr($tokens[$i], 1, strlen($tokens[$i]));
-                continue;
-            }
-
-            $aux_tokens[] = $tokens[$i];
-        }
-
-        if($aux_tokens == 0)
+        if($tokens == 0)
         {
             throw new VespaInvalidYQLQuery("");
         }
 
-        $aux_tokens = "phrase('".implode($aux_tokens, "', '")."')";
-        $this->createWeakAnd($aux_tokens, $field, $group_name, $target_num_hits, $logical_operator);
+        $this->createWand($tokens, $field, $group_name, $target_num_hits, $score_threshold, $logical_operator);
+
+        if($not_tokens != null && count($not_tokens) > 0)
+        {
+            $this->createWand($not_tokens, $field, "NOT 1", $target_num_hits, $score_threshold, "AND !");
+        }
+
+        return $this;
+    }
+
+    public function addWeakAndCondition(string $term, string $field = 'default', $group_name = null, int $target_num_hits = null, $score_threshold = null, $logical_operator = 'AND') : VespaYQLBuilder
+    {
+        $tokens = $this->splitTerm($term);
+        [$tokens, $not_tokens] = $this->tokenizeTerm($term, true);
+
+        if($tokens == 0)
+        {
+            throw new VespaInvalidYQLQuery("");
+        }
+
+        $this->createWeakAnd("phrase('".implode($tokens, "', '")."')", $field, $group_name, $target_num_hits, $score_threshold, $logical_operator);
 
         if($not_tokens != null && count($not_tokens) > 0)
         {
             $not_tokens = "phrase('".implode($not_tokens, "', '")."')";
-            $this->createWeakAnd($not_tokens, $field, "NOT 1", $target_num_hits, "AND !");
+            $this->createWeakAnd($not_tokens, $field, "NOT 1", $target_num_hits, $score_threshold, "AND !");
         }
 
         return $this;
@@ -84,29 +82,7 @@ class VespaYQLBuilder
     public function addTokenizeCondition(string $term, string $field = 'default', $group_name = null, $logical_operator = "AND", bool $stemming = null) : VespaYQLBuilder
     {
         $term = $this->removeQuotes($term);
-        $tokens = $this->splitTerm($term);
-
-        $aux_tokens = [];
-        $not_tokens = [];
-        for($i = 0; $i < count($tokens); $i ++)
-        {
-            $tokens[$i] = $this->removeQuotes($tokens[$i]);
-
-            //If the token is empty, ignore it
-            if($tokens[$i] == '')
-            {
-                continue;
-            }
-
-            //if the token start with minus signal, put it in another array
-            if(strpos($tokens[$i], '-') === 0)
-            {
-                $not_tokens[] = "'".substr($tokens[$i], 1, strlen($tokens[$i]))."'";
-                continue;
-            }
-
-            $aux_tokens[] = $tokens[$i];
-        }
+        [$tokens, $not_tokens] = $this->tokenizeTerm($term, true);
 
         $not_group_name = null;
         $not_logical_operator = 'AND !';
@@ -120,16 +96,16 @@ class VespaYQLBuilder
             }
         }
 
-        if(count($aux_tokens) == 0)
+        if(count($tokens) == 0)
         {
             $term = "'$term'";
             if($stemming !== null) $term = "([{'stem': ". json_encode($stemming). "}]$term)";
             $this->createGroupCondition($field, "CONTAINS", $term, $group_name, $logical_operator);
         }
 
-        for($i = 0; $i < count($aux_tokens); $i ++)
+        for($i = 0; $i < count($tokens); $i ++)
         {
-            $key = "'".$aux_tokens[$i]."'";
+            $key = "'".$tokens[$i]."'";
 
             if($stemming !== null)
             {
@@ -153,7 +129,9 @@ class VespaYQLBuilder
         $tokens = $this->generateCombinations($term);
 
         if(count($tokens) == 0)
+        {
             $this->createGroupCondition($field, "CONTAINS", "'$term'", $group_name, $logical_operator);
+        }
 
         $phrase = '(';
         for($i = 0; $i < count($tokens); $i ++)
@@ -173,26 +151,14 @@ class VespaYQLBuilder
                                          $group_name = null, $logical_operator = "AND", bool $stemming = null,
                                          $same_order = true) : VespaYQLBuilder
     {
-        $tokens = $this->splitTerm($term);
-        $aux_tokens = [];
-        for($i = 0; $i < count($tokens); $i ++)
-        {
-            $tokens[$i] = $this->removeQuotes($tokens[$i]);
-            //if the token start with minus signal, ignore it
-            if(strpos($tokens[$i], '-') === 0)
-            {
-                continue;
-            }
-            $tokens[$i] = "'$tokens[$i]'";
-            $aux_tokens[] = $tokens[$i];
-        }
+        [$tokens, $not_tokens] = $this->tokenizeTerm($term, true);
 
-        if(!isset($word_distance)) $word_distance = count($aux_tokens) - 1;
+        if(!isset($word_distance)) $word_distance = count($tokens) - 1;
 
         //if only one token is passed, adds a simple condition
-        if(count($aux_tokens) == 1)
+        if(count($tokens) == 1)
         {
-            $aux_term = implode(' ', $aux_tokens);
+            $aux_term = implode(' ', $tokens);
             if($stemming !== null) $aux_term = "([{'stem': ". json_encode($stemming). "}]$aux_term)";
             $this->createGroupCondition($field, "CONTAINS", $aux_term, $group_name, $logical_operator);
             return $this;
@@ -201,7 +167,7 @@ class VespaYQLBuilder
         $near = $same_order ? 'onear' : 'near';
         $stemming_term = '';
         if($stemming !== null) $stemming_term = ", 'stem': ". json_encode($stemming);
-        $this->createGroupCondition($field, "CONTAINS", "([ {'distance': ".($word_distance + 1)."$stemming_term}]$near(".implode(', ', $aux_tokens)."))", $group_name, $logical_operator);
+        $this->createGroupCondition($field, "CONTAINS", "([ {'distance': ".($word_distance + 1)."$stemming_term}]$near('".implode("', '", $tokens)."'))", $group_name, $logical_operator);
 
         return $this;
     }
@@ -313,6 +279,8 @@ class VespaYQLBuilder
         $fields = isset($this->fields)? implode(', ', $this->fields) : '*';
         $document_types = isset($this->document_types)? ("(sddocname CONTAINS '".implode("' OR  sddocname CONTAINS '", $this->document_types)."')" ): null;
         $search_conditions = $document_types? [$document_types] : [];
+        $weakand_groups = isset($this->weakand_groups)?: [];
+        $wand_groups = isset($this->wand_groups)?: [];
         $search_condition_groups = [];
         $sources = '';
         if(!isset($this->sources) || count($this->sources) === 0)
@@ -376,12 +344,85 @@ class VespaYQLBuilder
         if($search_conditions) $yql .= implode(' AND ', $search_conditions)." ";
         if($search_condition_groups) $yql .= implode(' ', $search_condition_groups)." ";
         $yql .= $this->formatWeakAndGroups($search_conditions || $search_condition_groups);
+        $yql .= $this->formatWandGroups($search_conditions || $search_condition_groups || $weakand_groups);
         if($orderBy != null) $yql .= $orderBy;
         if($limit != null) $yql .= " LIMIT $limit";
         if($offset != null) $yql .= " OFFSET $offset";
 
         $yql = $this->removeExtraSpace($yql .= ';');
         return $yql;
+    }
+
+    private function formatWandGroups($condition_before = false)
+    {
+        $formatedWandGroups = [];
+        if(!isset($this->wand_groups))
+        {
+            $this->wand_groups = [];
+        }
+
+        $str_group = "";
+
+        foreach ($this->wand_groups as $group)
+        {
+            if($condition_before) {
+                $str_group = $group["head"]["logical_operator"];
+            }
+
+            $str_group .= " ";
+            $tags = "";
+            if(isset($group["head"]["target_num_hits"]))
+            {
+                $tags .= "{'targetNumHits': {$group["head"]["target_num_hits"]}}";
+            }
+            if(isset($group["head"]["score_threshold"]))
+            {
+                if($tags != "")
+                {
+                    $tags .= ",";
+                }
+
+                $tags .= "{'scoreThreshold': {$group["head"]["score_threshold"]}}";
+            }
+            if($tags != "")
+            {
+                $str_group .= "[$tags]";
+            }
+
+            foreach ($group["body"] as $key => $values)
+            {
+                $str_group .= "( wand($key, ";
+                $group_body = [];
+                foreach ($values[0] as $value)
+                {
+                    $weigth = intval(100 * count($values) / (count($group_body) + 1));
+                    if(is_numeric($value))
+                    {
+                        $group_body[] = "[$value, $weigth]";
+                        $isNumeric = true;
+                    }
+                    else
+                    {
+                        $group_body[] = "'$value': $weigth";
+                        $isNumeric = false;
+                    }
+                }
+                if($isNumeric)
+                {
+                    $str_group .= "[".implode(", ", $group_body)."]";
+                }
+                else
+                {
+                    $str_group .= "{".implode(", ", $group_body)."}";
+                }
+                $str_group .= "))";
+            }
+
+            $formatedWandGroups[] = $str_group;
+            $condition_before = true;
+        }
+
+        return implode("", $formatedWandGroups);
     }
 
     private function formatWeakAndGroups($condition_before = false)
@@ -401,9 +442,23 @@ class VespaYQLBuilder
             }
 
             $str_group .= " (";
-            if($group["head"]["target_num_hits"])
+            $tags = "";
+            if(isset($group["head"]["target_num_hits"]))
             {
-                $str_group .= "[{'targetNumHits': {$group["head"]["target_num_hits"]}}]";
+                $tags .= "{'targetNumHits': {$group["head"]["target_num_hits"]}}";
+            }
+            if(isset($group["head"]["score_threshold"]))
+            {
+                if($tags != "")
+                {
+                    $tags .= ",";
+                }
+
+                $tags .= "{'scoreThreshold': {$group["head"]["score_threshold"]}}";
+            }
+            if($tags != "")
+            {
+                $str_group .= "[$tags]";
             }
             $str_group .= "weakAnd( ";
             $group_body = [];
@@ -421,7 +476,32 @@ class VespaYQLBuilder
         return implode("", $formatedWeakAndGroups);
     }
 
-    private function createWeakAnd(string $term, string $field = 'default', $group_name = null, int $target_num_hits = null, $logical_operator = 'AND')
+    private function createWand(array $term, string $field = 'default', $group_name = null, int $target_num_hits = null, double $score_threshold = null, $logical_operator = 'AND')
+    {
+        if(!isset($this->weakand_groups)) $this->wand_groups = [];
+        if($group_name === null) $group_name = $this->createGroupName($this->wand_groups);
+        if(is_string($group_name) && is_numeric($group_name)) $group_name = intval($group_name);
+        while (array_key_exists($group_name, $this->wand_groups)) $name++;
+        $size = count($this->wand_groups);
+
+        if($group_name < 0 && $size > 0) //put condition in the last group created
+        {
+            $group_name = array_keys($this->wand_groups)[$size - 1];
+        }
+        else if($group_name === null || $group_name === '' || $group_name < 0) //add new group
+        {
+            $group_name = $size;
+        }
+
+        $this->wand_groups[$group_name]["head"]["logical_operator"] = $logical_operator;
+        if($target_num_hits > 0) $this->wand_groups[$group_name]["head"]["target_num_hits"] = $target_num_hits;
+        if($score_threshold > 0) $this->wand_groups[$group_name]["head"]["score_threshold"] = $score_threshold;
+        $this->wand_groups[$group_name]["body"][$field][] = $term;
+
+        return $this;
+    }
+
+    private function createWeakAnd(string $term, string $field = 'default', $group_name = null, int $target_num_hits = null, double $score_threshold = null, $logical_operator = 'AND')
     {
         $operator = 'CONTAINS';
         if(!isset($this->weakand_groups)) $this->weakand_groups = [];
@@ -441,6 +521,7 @@ class VespaYQLBuilder
 
         $this->weakand_groups[$group_name]["head"]["logical_operator"] = $logical_operator;
         if($target_num_hits > 0) $this->weakand_groups[$group_name]["head"]["target_num_hits"] = $target_num_hits;
+        if($score_threshold > 0) $this->weakand_groups[$group_name]["head"]["score_threshold"] = $score_threshold;
         $this->weakand_groups[$group_name]["body"][] = [$field, $operator, $term];
 
         return $this;
@@ -511,6 +592,41 @@ class VespaYQLBuilder
     {
         return  explode(" ", $term);
     }
+
+    private function tokenizeTerm($term, $separate_tokens = false)
+    {
+        $tokens = $this->splitTerm($term);
+
+        if(!$separate_tokens)
+        {
+            return $tokens;
+        }
+
+        $aux_tokens = [];
+        $not_tokens = [];
+        for($i = 0; $i < count($tokens); $i ++)
+        {
+            $tokens[$i] = $this->removeQuotes($tokens[$i]);
+
+            //If the token is empty, ignore it
+            if($tokens[$i] == '')
+            {
+                continue;
+            }
+
+            //if the token start with minus signal, put it in another array
+            if(strpos($tokens[$i], '-') === 0 && strlen($tokens[$i]) > 1)
+            {
+                $not_tokens[] = "'".substr($tokens[$i], 1, strlen($tokens[$i]))."'";
+                continue;
+            }
+
+            $aux_tokens[] = $tokens[$i];
+        }
+
+        return [$tokens, $not_tokens];
+    }
+
 
     private function generateCombinations($term, $inverse = false)
     {
