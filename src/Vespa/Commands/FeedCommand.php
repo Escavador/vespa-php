@@ -169,13 +169,12 @@ class FeedCommand extends Command
                 exit(1);
             }
 
-            $this->message('debug', "[$model]: Feed is already!");
+            $this->message('info', "[$model]: Feed is already!");
 
             //TODO: make this async
             try
             {
-                $this->process($model_definition);
-                $was_fed = true;
+                $was_fed = $this->process($model_definition);
             }
             catch (\Exception $ex)
             {
@@ -191,7 +190,7 @@ class FeedCommand extends Command
         if($was_fed)
         {
             $total_duration = Carbon::now()->diffInSeconds($start_time);
-            $this->message('debug', '['.implode(',', $models) . ']: Vespa was fed in '. gmdate('H:i:s:m', $total_duration));
+            $this->message('info', '['.implode(',', $models) . ']: Vespa was fed in '. gmdate('H:i:s:m', $total_duration));
         }
     }
 
@@ -295,6 +294,6 @@ class FeedCommand extends Command
 
         $this->message('info', "[$model]: $total_indexed/$this->limit was done.");
 
-        return true;
+        return $total_indexed > 0;
     }
 }
