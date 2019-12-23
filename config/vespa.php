@@ -25,6 +25,7 @@ return array(
         ],
         'limit' => 500,
         'bulk' => 100,
+        'max_parallel_feed_requests' => 1000,
         'set_language' => 'en-US'
     ),
 

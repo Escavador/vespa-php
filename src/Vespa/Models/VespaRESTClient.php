@@ -35,12 +35,14 @@ class VespaRESTClient extends AbstractClient
 {
     protected $client;
     protected $max_concurrency;
+    protected $max_parallel_requests;
 
     public function __construct(array $headers = null)
     {
         parent::__construct();
         $this->client = new Client();
         $this->max_concurrency = config('vespa.default.vespa_rest_client.max_concurrency', 6);
+        $this->max_parallel_requests = intval(config('vespa.default.max_parallel_feed_requests', 1000));
         $this->logger =  new LogManager();
 
         if($headers)
@@ -236,30 +238,35 @@ class VespaRESTClient extends AbstractClient
             }
         };
 
-        $pool = new Pool($this->client, $requests($documents, $definition), [
-            'concurrency' => $this->max_concurrency,
-            'fulfilled' => function (Response $response, $index) use (&$documents, &$indexed, &$document_type, &$document_namespace)
-            {
-                $document = $documents[$index];
-                $indexed[] = $document;
-                $scheme = "id:{$document_namespace}:{$document_type}::{$document->getVespaDocumentId()}";
-                $this->logger->log("Document $scheme was indexed to Vespa", 'debug');
-            },
-            'rejected' => function (RequestException $reason, $index) use (&$definition, &$documents, &$document_type, &$document_namespace)
-            {
-                $document = $documents[$index];
-                $not_indexed[] = $document;
-                $e = new VespaFailSendDocumentException($definition, $document, $reason->getCode(), $reason->getMessage());
-                $this->logger->log($e->getMessage(), 'error');
-                VespaExceptionSubject::notifyObservers($e);
-            },
-        ]);
+        $documents_chunk = array_chunk($documents, $this->max_parallel_requests);
+        foreach ($documents_chunk as $chunk)
+        {
+            $pool = new Pool($this->client, $requests($chunk, $definition), [
+                'concurrency' => $this->max_concurrency,
+                'fulfilled' => function (Response $response, $index) use (&$chunk, &$indexed, &$document_type, &$document_namespace)
+                {
+                    $document = $chunk[$index];
+                    $indexed[] = $index;
+                    $scheme = "id:{$document_namespace}:{$document_type}::{$document->getVespaDocumentId()}";
+                    $this->logger->log("Document $scheme was indexed to Vespa", 'debug');
+                },
+                'rejected' => function (RequestException $reason, $index) use (&$definition, &$not_indexed, &$chunk, &$document_type, &$document_namespace)
+                {
+                    $document = $chunk[$index];
+                    $not_indexed[] = $index;
+                    $e = new VespaFailSendDocumentException($definition, $document, $reason->getCode(), $reason->getMessage());
+                    $this->logger->log($e->getMessage(), 'error');
+                    VespaExceptionSubject::notifyObservers($e);
+                },
+            ]);
 
-        // Initiate the transfers and create a promise
-        $promise = $pool->promise();
+            // Initiate the transfers and create a promise
+            $promise = $pool->promise();
 
-        // Force the pool of requests to complete.
-        $promise->wait();
+            // Force the pool of requests to complete.
+            $promise->wait();
+        }
+
 
         return [
             "indexed" => $indexed,

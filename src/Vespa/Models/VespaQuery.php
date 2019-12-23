@@ -2,6 +2,7 @@
 
 namespace Escavador\Vespa\Models;
 
+use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Interfaces\AbstractClient;
 use Escavador\Vespa\Interfaces\VespaResult;
 
@@ -52,14 +53,14 @@ class VespaQuery
 
     public final function query(string $query) : VespaQuery
     {
-        $this->query = $query;
+        $this->query = Utils::removeExtraSpace($query);
 
         return $this;
     }
 
     public final function yql(string $yql_statement) : VespaQuery
     {
-        $this->yql = trim($yql_statement);
+        $this->yql = Utils::removeExtraSpace($yql_statement);
 
         return $this;
     }

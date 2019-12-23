@@ -274,7 +274,7 @@ class FeedCommand extends Command
             if ($documents !== null && $count_docs <= 0)
             {
                 $this->message('info', "[$model] already up-to-date.");
-                return false;
+                break;
             }
 
             //Records on vespa
@@ -288,8 +288,8 @@ class FeedCommand extends Command
             $this->message('debug', "[$model]:". $count_indexed . " of " . count($documents) . " were indexed in Vespa.");
 
             //Update model's vespa info in database
-            $model_class::markAsVespaIndexed($indexed);
-            $model_class::markAsVespaNotIndexed($not_indexed);
+            $model_class::markAsVespaIndexed($documents, $indexed);
+            $model_class::markAsVespaNotIndexed($documents, $not_indexed);
         }
 
         $this->message('info', "[$model]: $total_indexed/$this->limit was done.");

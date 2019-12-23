@@ -42,4 +42,15 @@ class Utils
         $default_client = config('vespa.default.client', VespaRESTClient::class);
         return new $default_client;
     }
+
+    public static function removeQuotes(string $text) : string
+    {
+        $text = preg_replace('/^"(.*)"$/i', '${1}', $text);
+        return preg_replace("/^'(.*)'$/i", '${1}', $text);
+    }
+
+    public static function removeExtraSpace(string $text) : string
+    {
+        return trim(preg_replace("/\s+/", '${1} ', $text));
+    }
 }

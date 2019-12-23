@@ -2,7 +2,9 @@
 
 namespace Escavador\Vespa\Models;
 
+use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Exception\VespaException;
+use Escavador\Vespa\Exception\VespaInvalidYQLQuery;
 use Escavador\Vespa\Interfaces\AbstractClient;
 use Escavador\Vespa\Interfaces\VespaResult;
 
@@ -28,13 +30,13 @@ class VespaYQLBuilder
 
     public function addStemmingCondition(string $term, bool $stemming, string $field) : VespaYQLBuilder
     {
-        $term = $this->removeQuotes($term);
+        $term = Utils::removeQuotes($term);
         return $this->createCondition($field, "CONTAINS",  "([{'stem': ".json_encode($stemming)."}]'$term')");
     }
 
     public function addStemmingGroupCondition(string $term, bool $stemming = false, string $field, $operator = 'CONTAINS', $group_name = null, $logical_operator = 'OR') : VespaYQLBuilder
     {
-        $term = $this->removeQuotes($term);
+        $term = Utils::removeQuotes($term);
         return $this->createGroupCondition($field, $operator, "([{'stem': ".json_encode($stemming)."}]'$term')", $group_name, $logical_operator);
     }
 
@@ -58,7 +60,7 @@ class VespaYQLBuilder
         return $this;
     }
 
-    public function addWeakAndCondition(string $term, string $field = 'default', $group_name = null, int $target_num_hits = null, $score_threshold = null, $logical_operator = 'AND') : VespaYQLBuilder
+    public function addWeakAndCondition(string $term, string $field = 'default', $group_name = null, int $target_num_hits = null, $score_threshold = null, $logical_operator = 'AND', $rawQuery = null) : VespaYQLBuilder
     {
         $tokens = $this->splitTerm($term);
         [$tokens, $not_tokens] = $this->tokenizeTerm($term, true);
@@ -68,11 +70,11 @@ class VespaYQLBuilder
             throw new VespaInvalidYQLQuery("");
         }
 
-        $this->createWeakAnd("phrase('".implode($tokens, "', '")."')", $field, $group_name, $target_num_hits, $score_threshold, $logical_operator);
+        $this->createWeakAnd("phrase('".implode("', '", $tokens)."') $rawQuery", $field, $group_name, $target_num_hits, $score_threshold, $logical_operator);
 
         if($not_tokens != null && count($not_tokens) > 0)
         {
-            $not_tokens = "phrase('".implode($not_tokens, "', '")."')";
+            $not_tokens = "phrase('".implode("', '", $not_tokens)."')";
             $this->createWeakAnd($not_tokens, $field, "NOT 1", $target_num_hits, $score_threshold, "AND !");
         }
 
@@ -81,7 +83,7 @@ class VespaYQLBuilder
 
     public function addTokenizeCondition(string $term, string $field = 'default', $group_name = null, $logical_operator = "AND", bool $stemming = null) : VespaYQLBuilder
     {
-        $term = $this->removeQuotes($term);
+        $term = Utils::removeQuotes($term);
         [$tokens, $not_tokens] = $this->tokenizeTerm($term, true);
 
         $not_group_name = null;
@@ -125,24 +127,16 @@ class VespaYQLBuilder
 
     public function addPhraseCondition(string $term, string $field = 'default', $group_name = null, $logical_operator = "AND") : VespaYQLBuilder
     {
-        $term = $this->removeQuotes($term);
-        $tokens = $this->generateCombinations($term);
+        $tokens = $this->tokenizeTerm($term);
 
-        if(count($tokens) == 0)
+        if(count($tokens) == 1)
         {
             $this->createGroupCondition($field, "CONTAINS", "'$term'", $group_name, $logical_operator);
         }
-
-        $phrase = '(';
-        for($i = 0; $i < count($tokens); $i ++)
+        else
         {
-            $token = $tokens[$i];
-            $key = "'" . key($token) . "'";
-            $phrase .= $key . (($i < count($tokens) - 1)? ', ': '');
+            $this->createGroupCondition($field, "CONTAINS", "phrase('".implode("', '", $tokens)."')", $group_name, $logical_operator);
         }
-        $phrase .= ')';
-
-        $this->createGroupCondition($field, "CONTAINS", $phrase, $group_name, $logical_operator);
 
         return $this;
     }
@@ -178,7 +172,7 @@ class VespaYQLBuilder
         {
             case "boolean": $term = json_encode($term); break;
             case "string": {
-                $term = $this->removeQuotes($term);
+                $term = Utils::removeQuotes($term);
                 $term = "'$term'";
             } break;
         }
@@ -186,17 +180,14 @@ class VespaYQLBuilder
         return $this->createCondition($field, $operator, $term);
     }
 
-    public function addRawCondition($condition) : VespaYQLBuilder
+    public function addRawCondition($condition, $group_name = null, $logical_operator = 'AND') : VespaYQLBuilder
     {
-        if(!isset($this->search_conditions)) $this->search_conditions = [];
-
-        $this->search_conditions [] = $condition;
-        return $this;
+        return $this->createGroupCondition($condition, '', '', $group_name, $logical_operator);
     }
 
     public function addGroupCondition($term, string $field = 'default', $operator = 'CONTAINS', $group_name = null, $logical_operator = 'OR', bool $stemming = null) : VespaYQLBuilder
     {
-        $term = $this->removeQuotes($term);
+        $term = Utils::removeQuotes($term);
 
         switch (gettype($term))
         {
@@ -260,8 +251,7 @@ class VespaYQLBuilder
     {
         if(strtoupper($order) != "DESC" and strtoupper($order) != "ASC")
         {
-            // Custom Exception
-            throw new \Exception("Syntax Error. The property \"order by\" should be \"DESC\" or \"ASC\"");
+            throw new VespaInvalidYQLQuery("Syntax Error. The property \"order by\" should be \"DESC\" or \"ASC\"");
         }
 
         if(!isset($this->orderBy))
@@ -349,8 +339,7 @@ class VespaYQLBuilder
         if($limit != null) $yql .= " LIMIT $limit";
         if($offset != null) $yql .= " OFFSET $offset";
 
-        $yql = $this->removeExtraSpace($yql .= ';');
-        return $yql;
+        return Utils::removeExtraSpace($yql .= ';');
     }
 
     private function formatWandGroups($condition_before = false)
@@ -445,20 +434,24 @@ class VespaYQLBuilder
             $tags = "";
             if(isset($group["head"]["target_num_hits"]))
             {
-                $tags .= "{'targetNumHits': {$group["head"]["target_num_hits"]}}";
+                $tags .= "{'targetNumHits': {$group["head"]["target_num_hits"]}";
             }
             if(isset($group["head"]["score_threshold"]))
             {
                 if($tags != "")
                 {
-                    $tags .= ",";
+                    $tags .= ", ";
+                }
+                else
+                {
+                    $tags .= "{";
                 }
 
-                $tags .= "{'scoreThreshold': {$group["head"]["score_threshold"]}}";
+                $tags .= "'scoreThreshold': {$group["head"]["score_threshold"]}";
             }
             if($tags != "")
             {
-                $str_group .= "[$tags]";
+                $str_group .= "[$tags}]";
             }
             $str_group .= "weakAnd( ";
             $group_body = [];
@@ -501,7 +494,7 @@ class VespaYQLBuilder
         return $this;
     }
 
-    private function createWeakAnd(string $term, string $field = 'default', $group_name = null, int $target_num_hits = null, double $score_threshold = null, $logical_operator = 'AND')
+    private function createWeakAnd(string $term, string $field = 'default', $group_name = null, int $target_num_hits = null, $score_threshold = null, $logical_operator = 'AND')
     {
         $operator = 'CONTAINS';
         if(!isset($this->weakand_groups)) $this->weakand_groups = [];
@@ -574,22 +567,12 @@ class VespaYQLBuilder
 
     private function removeSpecial(sting $text) : string
     {
-        return $this->removeExtraSpace(str_replace('  ', '', preg_replace('/[#$%^&*()+=\-\[\]\';,.\/{}|":<>?~\\\\]/', '${1} ', $text)));
-    }
-
-    private function removeQuotes(string $text) : string
-    {
-        $text = preg_replace('/^"(.*)"$/i', '${1}', $text);
-        return preg_replace("/^'(.*)'$/i", '${1}', $text);
-    }
-
-    private function removeExtraSpace(string $text) : string
-    {
-        return trim(preg_replace("/\s+/", '${1} ', $text));
+        return Utils::removeExtraSpace(str_replace('  ', '', preg_replace('/[#$%^&*()+=\-\[\]\';,.\/{}|":<>?~\\\\]/', '${1} ', $text)));
     }
 
     private function splitTerm($term)
     {
+        $term = Utils::removeExtraSpace($term);
         return  explode(" ", $term);
     }
 
@@ -606,7 +589,7 @@ class VespaYQLBuilder
         $not_tokens = [];
         for($i = 0; $i < count($tokens); $i ++)
         {
-            $tokens[$i] = $this->removeQuotes($tokens[$i]);
+            $tokens[$i] = Utils::removeQuotes($tokens[$i]);
 
             //If the token is empty, ignore it
             if($tokens[$i] == '')
@@ -626,7 +609,6 @@ class VespaYQLBuilder
 
         return [$tokens, $not_tokens];
     }
-
 
     private function generateCombinations($term, $inverse = false)
     {
