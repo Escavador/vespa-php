@@ -62,7 +62,7 @@ abstract class VespaResult
     {
         if($this->onlyRaw())
         {
-            $e = new VespaException("This response was not normalized. Please see the \"raw\" property");
+            $e = new VespaException("This response was not normalized. Please see the \"raw\" property. {$this->raw()}");
             VespaExceptionSubject::notifyObservers($e);
             throw $e;
         }

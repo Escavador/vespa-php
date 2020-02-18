@@ -233,8 +233,8 @@ class VespaRESTClient extends AbstractClient
             foreach ($documents as $document)
             {
                 $scheme = "id:{$document_namespace}:{$document_type}::{$document->getVespaDocumentId()}";
-                $url = $this->host . "/document/v1/{$document_namespace}/{$document_type}/docid/{$document->getVespaDocumentId()}";
-                yield new Request('POST', $url, $this->headers, json_encode(['fields' =>  $document->getVespaDocumentFields()]));
+                $url = $this->host."/document/v1/{$document_namespace}/{$document_type}/docid/{$document->getVespaDocumentId()}";
+                yield new Request('POST', $url, $this->headers, json_encode(['fields' => $document->getVespaDocumentFields()]));
             }
         };
 
@@ -245,10 +245,10 @@ class VespaRESTClient extends AbstractClient
                 'concurrency' => $this->max_concurrency,
                 'fulfilled' => function (Response $response, $index) use (&$chunk, &$indexed, &$document_type, &$document_namespace)
                 {
-                    $document = $chunk[$index];
-                    $indexed[] = $index;
-                    $scheme = "id:{$document_namespace}:{$document_type}::{$document->getVespaDocumentId()}";
-                    $this->logger->log("Document $scheme was indexed to Vespa", 'debug');
+                        $document = $chunk[$index];
+                        $indexed[] = $index;
+                        $scheme = "id:{$document_namespace}:{$document_type}::{$document->getVespaDocumentId()}";
+                        $this->logger->log("Document $scheme was indexed to Vespa", 'debug');
                 },
                 'rejected' => function (RequestException $reason, $index) use (&$definition, &$not_indexed, &$chunk, &$document_type, &$document_namespace)
                 {
@@ -266,7 +266,6 @@ class VespaRESTClient extends AbstractClient
             // Force the pool of requests to complete.
             $promise->wait();
         }
-
 
         return [
             "indexed" => $indexed,

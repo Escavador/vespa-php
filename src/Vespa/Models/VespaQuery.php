@@ -86,6 +86,13 @@ class VespaQuery
         return $this;
     }
 
+    public final function type(string $type) : VespaQuery
+    {
+        $this->type = $type;
+
+        return $this;
+    }
+
     public final function traceLevel(int $traceLevel) : VespaQuery
     {
         $this->traceLevel = $traceLevel;

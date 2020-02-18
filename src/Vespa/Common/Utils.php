@@ -46,7 +46,7 @@ class Utils
     public static function removeQuotes(string $text) : string
     {
         $text = preg_replace('/^"(.*)"$/i', '${1}', $text);
-        return preg_replace("/^'(.*)'$/i", '${1}', $text);
+        return  addslashes(preg_replace("/^'(.*)'$/i", '${1}', $text));
     }
 
     public static function removeExtraSpace(string $text) : string

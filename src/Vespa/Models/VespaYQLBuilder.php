@@ -10,6 +10,12 @@ use Escavador\Vespa\Interfaces\VespaResult;
 
 class VespaYQLBuilder
 {
+    public function __construct ()
+    {
+        $this->search_condition_groups = [];
+        $this->document_type = [];
+    }
+
     public final function view() : string
     {
         return $this->__toString();
@@ -28,179 +34,164 @@ class VespaYQLBuilder
         return $this;
     }
 
-    public function addStemmingCondition(string $term, bool $stemming, string $field) : VespaYQLBuilder
+    public function addStemmingCondition(string $term, bool $stemming = false, string $field = 'default', $operator = 'CONTAINS', $logical_operator = 'AND', $group_name = null) : VespaYQLBuilder
     {
         $term = Utils::removeQuotes($term);
-        return $this->createCondition($field, "CONTAINS",  "([{'stem': ".json_encode($stemming)."}]'$term')");
+        $allowed_operators = ['CONTAINS', 'PHRASE'];
+
+        if(strtoupper($operator) == "CONTAINS")
+        {
+            return $this->createGroupCondition($field, $operator, "'$term'", $logical_operator, $group_name, ['stem' => $stemming], $allowed_operators);
+        }
+        else //PHRASE
+        {
+            $tokens = $this->splitTerm(addslashes($term));
+            return $this->createGroupCondition($field, $operator, "('".implode("', '", $tokens)."')", $logical_operator, $group_name, ['stem' => $stemming], $allowed_operators);
+        }
+
+        return $this;
     }
 
-    public function addStemmingGroupCondition(string $term, bool $stemming = false, string $field, $operator = 'CONTAINS', $group_name = null, $logical_operator = 'OR') : VespaYQLBuilder
-    {
-        $term = Utils::removeQuotes($term);
-        return $this->createGroupCondition($field, $operator, "([{'stem': ".json_encode($stemming)."}]'$term')", $group_name, $logical_operator);
-    }
-
-    public function addWandCondition(string $term, string $field = 'default', $group_name = null, int $target_num_hits = null, $score_threshold = null, $logical_operator = 'AND') : VespaYQLBuilder
+    public function addWandCondition(string $term, string $field = 'default', $logical_operator = 'AND', $group_name = null, int $target_num_hits = null, float $score_threshold = null, \Closure $weight_tokens = null) : VespaYQLBuilder
     {
         $tokens = $this->splitTerm($term);
         [$tokens, $not_tokens] = $this->tokenizeTerm($term, true);
-
-        if($tokens == 0)
+        $tokens = $this->generateWeightedTokens($tokens);
+        if($weight_tokens != null)
         {
-            throw new VespaInvalidYQLQuery("");
+            $tokens = $weight_tokens($tokens);
         }
-
         $this->createWand($tokens, $field, $group_name, $target_num_hits, $score_threshold, $logical_operator);
 
-        if($not_tokens != null && count($not_tokens) > 0)
+        if(count($not_tokens) > 0)
         {
-            $this->createWand($not_tokens, $field, "NOT 1", $target_num_hits, $score_threshold, "AND !");
+            if($weight_tokens != null)
+            {
+                $not_tokens = $weight_tokens($not_tokens);
+            }
+            $this->createWand($not_tokens, $field, null, $target_num_hits, $score_threshold, "AND !");
         }
-
         return $this;
     }
 
-    public function addWeakAndCondition(string $term, string $field = 'default', $group_name = null, int $target_num_hits = null, $score_threshold = null, $logical_operator = 'AND', $rawQuery = null) : VespaYQLBuilder
+    public function addWeakAndCondition(array $tokens, string $field = 'default', $logical_operator = 'AND', $group_name = null, int $target_num_hits = null, int $score_threshold = null) : VespaYQLBuilder
     {
-        $tokens = $this->splitTerm($term);
-        [$tokens, $not_tokens] = $this->tokenizeTerm($term, true);
-
-        if($tokens == 0)
+        $parsed_tokens = [];
+        foreach ($tokens as $token)
         {
-            throw new VespaInvalidYQLQuery("");
-        }
-
-        $this->createWeakAnd("phrase('".implode("', '", $tokens)."') $rawQuery", $field, $group_name, $target_num_hits, $score_threshold, $logical_operator);
-
-        if($not_tokens != null && count($not_tokens) > 0)
-        {
-            $not_tokens = "phrase('".implode("', '", $not_tokens)."')";
-            $this->createWeakAnd($not_tokens, $field, "NOT 1", $target_num_hits, $score_threshold, "AND !");
-        }
-
-        return $this;
-    }
-
-    public function addTokenizeCondition(string $term, string $field = 'default', $group_name = null, $logical_operator = "AND", bool $stemming = null) : VespaYQLBuilder
-    {
-        $term = Utils::removeQuotes($term);
-        [$tokens, $not_tokens] = $this->tokenizeTerm($term, true);
-
-        $not_group_name = null;
-        $not_logical_operator = 'AND !';
-        for($i = 0; $i < count($not_tokens); $i ++)
-        {
-            $this->createGroupCondition($field, "CONTAINS", $not_tokens[$i], $not_group_name, $not_logical_operator);
-            if($i == 0)
+            if(gettype($token) == 'array' && count($token) == 1)
             {
-                $not_group_name = -1; //always the last group added
-                $not_logical_operator = 'AND';  //only the first logical operator can be different of 'OR'
+                $operator = array_key_first($token);
+                $term = $token[$operator];
+                $term = Utils::removeQuotes($term);
+
+                if($term == "")
+                {
+                    throw new VespaInvalidYQLQuery("Searching for blank strings is not allowed.");
+                }
+
+                if(strcasecmp("CONTAINS", $operator) === 0)
+                {
+                    $parsed_tokens[] = "$field $operator '$term'";
+                    continue;
+                }
+                elseif  (strcasecmp("PHRASE", $operator) === 0 )
+                {
+                    $terms = $this->tokenizeTerm($term);
+                    $parsed_tokens[] = "$field $operator('".implode("', '", $terms)."')";
+                    continue;
+                }
             }
+            throw new VespaInvalidYQLQuery("Tokens for the weakAnd operator must be formed by [[operator => term], ...]. Allowed operators are: CONTAINS or PHRASE.");
         }
-
-        if(count($tokens) == 0)
-        {
-            $term = "'$term'";
-            if($stemming !== null) $term = "([{'stem': ". json_encode($stemming). "}]$term)";
-            $this->createGroupCondition($field, "CONTAINS", $term, $group_name, $logical_operator);
-        }
-
-        for($i = 0; $i < count($tokens); $i ++)
-        {
-            $key = "'".$tokens[$i]."'";
-
-            if($stemming !== null)
-            {
-                $key = "([{'stem': ". json_encode($stemming). "}]$key)";
-            }
-
-            $this->createGroupCondition($field, "CONTAINS", $key, $group_name, $logical_operator);
-            if($i == 0)
-            {
-                $logical_operator = 'OR';  //only the first logical operator can be different of 'OR'
-                $group_name = -1; //always the last group added
-            }
-        }
-
+        $this->createWeakAnd($parsed_tokens, $field, $group_name, $target_num_hits, $score_threshold, $logical_operator);
         return $this;
     }
 
     public function addPhraseCondition(string $term, string $field = 'default', $group_name = null, $logical_operator = "AND") : VespaYQLBuilder
     {
+        $term = Utils::removeQuotes($term);
         $tokens = $this->tokenizeTerm($term);
 
         if(count($tokens) == 1)
         {
-            $this->createGroupCondition($field, "CONTAINS", "'$term'", $group_name, $logical_operator);
+            $this->createGroupCondition($field, "CONTAINS", "'$term'", $logical_operator, $group_name);
         }
         else
         {
-            $this->createGroupCondition($field, "CONTAINS", "phrase('".implode("', '", $tokens)."')", $group_name, $logical_operator);
+            $this->createGroupCondition($field, "PHRASE", $tokens, $logical_operator, $group_name);
         }
-
         return $this;
     }
 
-    public function addDistanceCondition(string $term, string $field = 'default', int $word_distance = null,
+    public function addDistanceCondition(string $term, string $field = 'default', int $word_distance = 3,
                                          $group_name = null, $logical_operator = "AND", bool $stemming = null,
                                          $same_order = true) : VespaYQLBuilder
     {
+        $term = Utils::removeQuotes($term);
         [$tokens, $not_tokens] = $this->tokenizeTerm($term, true);
 
-        if(!isset($word_distance)) $word_distance = count($tokens) - 1;
-
-        //if only one token is passed, adds a simple condition
-        if(count($tokens) == 1)
+        $operator_options = [];
+        if($stemming != null)
         {
-            $aux_term = implode(' ', $tokens);
-            if($stemming !== null) $aux_term = "([{'stem': ". json_encode($stemming). "}]$aux_term)";
-            $this->createGroupCondition($field, "CONTAINS", $aux_term, $group_name, $logical_operator);
-            return $this;
+            $operator_options[] = ['stem' => json_encode($stemming)];
         }
 
-        $near = $same_order ? 'onear' : 'near';
-        $stemming_term = '';
-        if($stemming !== null) $stemming_term = ", 'stem': ". json_encode($stemming);
-        $this->createGroupCondition($field, "CONTAINS", "([ {'distance': ".($word_distance + 1)."$stemming_term}]$near('".implode("', '", $tokens)."'))", $group_name, $logical_operator);
+        //if only one token is passed, adds a simple condition
+        if(count($tokens) <= 1)
+        {
+            $aux_term = implode(' ', $tokens);
+            $this->addCondition($aux_term, $field, $group_name, $logical_operator);
+            return $this;
+        }
+        if(count($not_tokens) <= 1)
+        {
+            $aux_term = implode(' ', $not_tokens);
+            $this->addCondition($aux_term, $field, $group_name, $logical_operator);
+            return $this;
+        }
+        $operator_options[] = ["distance" => $word_distance];
+        $operator = $same_order ? "ONEAR" : "NEAR";
 
+        if(count($tokens) > 1)
+        {
+            $this->createGroupCondition($field, $operator, $tokens, $logical_operator, $group_name);
+        }
+        if(count($not_tokens) > 1)
+        {
+            $this->createGroupCondition($field, $operator, $not_tokens, "AND !", $group_name);
+        }
         return $this;
     }
 
-    public function addCondition($term, string $field = 'default', $operator = 'CONTAINS') : VespaYQLBuilder
+    public function addRangeCondition(int $start, int $end, string $field = 'default', string $logical_operator = "AND", $group_name = null)
     {
-        switch (gettype($term))
-        {
-            case "boolean": $term = json_encode($term); break;
-            case "string": {
-                $term = Utils::removeQuotes($term);
-                $term = "'$term'";
-            } break;
-        }
+        return $this->createGroupCondition($field, 'RANGE', [$start, $end], $logical_operator, $group_name);
+    }
 
-        return $this->createCondition($field, $operator, $term);
+    public function addNumericCondition($term, string $field = 'default', string $operator = '=', string $logical_operator = "AND", $group_name = null) : VespaYQLBuilder
+    {
+        $allowed_operators = ["=", ">", "<", "<=", ">="];
+        if(!is_numeric($term)) throw new VespaInvalidYQLQuery("The variable '\$term' ({$term}) must be numeric.");
+        return $this->createGroupCondition($field, $operator, $term, $logical_operator, $group_name, null, $allowed_operators);
+    }
+
+    public function addBooleanCondition(bool $term, string $field = 'default', string $logical_operator = "AND", $group_name = null) : VespaYQLBuilder
+    {
+       $term = json_encode($term);
+       return $this->createGroupCondition($field, "=", $term, $logical_operator, $group_name);
     }
 
     public function addRawCondition($condition, $group_name = null, $logical_operator = 'AND') : VespaYQLBuilder
     {
-        return $this->createGroupCondition($condition, '', '', $group_name, $logical_operator);
+        $condition = Utils::removeQuotes($condition);
+        return $this->addSearchConditionGroup($logical_operator, [$condition], $group_name);
     }
 
-    public function addGroupCondition($term, string $field = 'default', $operator = 'CONTAINS', $group_name = null, $logical_operator = 'OR', bool $stemming = null) : VespaYQLBuilder
+    public function addCondition(string $term, string $field = 'default', $group_name = null, $logical_operator = 'AND') : VespaYQLBuilder
     {
         $term = Utils::removeQuotes($term);
-
-        switch (gettype($term))
-        {
-            case "boolean": $term = json_encode($term); break;
-            case "string": {
-                $term = "'$term'";
-
-                if($stemming !== null)
-                    $term = "([ {'stem': ". json_encode($stemming). "}]$term)";
-            } break;
-        }
-
-        return $this->createGroupCondition($field, $operator, $term, $group_name, $logical_operator);
+        return $this->createGroupCondition($field, "CONTAINS", "'$term'", $logical_operator, $group_name);
     }
 
     public function addField(string $field) : VespaYQLBuilder
@@ -215,6 +206,7 @@ class VespaYQLBuilder
 
     public function addSource(string $source) : VespaYQLBuilder
     {
+        $source = Utils::removeQuotes($source);
         if(!isset($this->sources))
             $this->sources = [];
 
@@ -225,11 +217,8 @@ class VespaYQLBuilder
 
     public function addDocumentType(string $document_type) : VespaYQLBuilder
     {
-        if(!isset($this->document_types))
-            $this->document_types = [];
-
-        if(!in_array($document_type, $this->document_types)) $this->document_types[] = $document_type;
-
+        $document_type = Utils::removeQuotes($document_type);
+        $this->document_type[] = $document_type;
         return $this;
     }
 
@@ -267,11 +256,6 @@ class VespaYQLBuilder
         $limit = isset($this->limit)? $this->limit : null;
         $offset = isset($this->offset)? $this->offset : null;
         $fields = isset($this->fields)? implode(', ', $this->fields) : '*';
-        $document_types = isset($this->document_types)? ("(sddocname CONTAINS '".implode("' OR  sddocname CONTAINS '", $this->document_types)."')" ): null;
-        $search_conditions = $document_types? [$document_types] : [];
-        $weakand_groups = isset($this->weakand_groups)?: [];
-        $wand_groups = isset($this->wand_groups)?: [];
-        $search_condition_groups = [];
         $sources = '';
         if(!isset($this->sources) || count($this->sources) === 0)
         {
@@ -280,11 +264,11 @@ class VespaYQLBuilder
         else
         {
             if (count($this->sources) > 1)
+            {
                 $sources = ' SOURCES ';
-
+            }
             $sources .= implode(', ', $this->sources);
         }
-
         $orderBy = null;
         if(isset($this->orderBy) && count($this->orderBy) > 0)
         {
@@ -297,44 +281,61 @@ class VespaYQLBuilder
             $orderBy = "  ORDER BY " . implode(", ", $aux_orderBy);
         }
 
-        $yql = "SELECT $fields FROM $sources ";
-        if(isset($this->search_conditions)) $search_conditions = array_merge($search_conditions, $this->search_conditions);
-        if(isset($this->search_condition_groups))
+        // add document type conditions
+        $document_type_group = 0;
+        foreach ($this->document_type as $doc_type)
         {
-            $start = true;
-            foreach ($this->search_condition_groups as $search_condition_group)
-            {
-                $group = $search_condition_group;
-                $group_condition = '';
-                for ($j = 0; $j < count($group); $j++)
-                {
-                    $condition = $group[$j];
-                    if($j === 0)
-                    {
-                        //The first group logical operator is used to join the group with other conditions (or group conditions)
-                        //It is only placed if other conditions exists.
-                        $group_condition .= (!$search_conditions && $start === true ? '' : $condition[0])." (";
-                        $group_condition .= " $condition[1] $condition[2] $condition[3] ";
-                    }
-                    else if($j < count($group))
-                    {
-                        $group_condition .= implode(" ", $condition) . ' ';
-                    }
+            $logical_operator = $document_type_group == 0? "AND" : "OR";
+            $group_name = $document_type_group == 0 ? null : -1;
+            $this->addCondition($doc_type, 'sddocname', $group_name, $logical_operator);
+            $document_type_group++;
+        }
 
-                    if($j == (count($group) - 1))
+        $search_condition_groups = $this->search_condition_groups;
+        $yql = "SELECT $fields FROM $sources ";
+        $has_condition = false;
+        foreach ($search_condition_groups as $search_conditions)
+        {
+            if(!$has_condition)
+            {
+                $yql .= " WHERE ";
+            }
+            $index = 0;
+            foreach ($search_conditions as $search_condition)
+            {
+                if(count($search_condition["condition"]) == 1)
+                {
+                    $condition = $search_condition["condition"][0];
+                }
+                else
+                {
+                    $operator = $search_condition["condition"][2];
+                    switch (strtoupper($operator))
                     {
-                        $group_condition .= " ) ";
+                        case "=":
+                            $condition = implode(" ", $search_condition["condition"]);
+                            break;
+                        case "PHRASE":
+                            $condition = $this->formatPhraseCondition($search_condition["condition"]);
+                            break;
+                        case "WAND":
+                            $condition = $this->formatWandCondition($search_condition["condition"]);
+                            break;
+                        case "WEAKAND":
+                            $condition = $this->formatWeakAndCondition($search_condition["condition"]);
+                            break;
+                        default:
+                            $condition = "{$search_condition["condition"][0]} {$search_condition["condition"][2]} ({$search_condition["condition"][1]} {$search_condition["condition"][3]})";
                     }
                 }
-                $search_condition_groups[] = $group_condition. ' ';
-                $start = false;
+                if($has_condition) $yql .= " {$search_condition["logical_operator"]} ";
+                if($index == 0) $yql .=  "(" ;
+                $yql .= " {$condition} ";
+                $index++;
             }
+            $yql .= ")";
+            $has_condition = true;
         }
-        if($search_conditions || $search_condition_groups || $weakand_groups) $yql .= " WHERE ";
-        if($search_conditions) $yql .= implode(' AND ', $search_conditions)." ";
-        if($search_condition_groups) $yql .= implode(' ', $search_condition_groups)." ";
-        $yql .= $this->formatWeakAndGroups($search_conditions || $search_condition_groups);
-        $yql .= $this->formatWandGroups($search_conditions || $search_condition_groups || $weakand_groups);
         if($orderBy != null) $yql .= $orderBy;
         if($limit != null) $yql .= " LIMIT $limit";
         if($offset != null) $yql .= " OFFSET $offset";
@@ -342,222 +343,78 @@ class VespaYQLBuilder
         return Utils::removeExtraSpace($yql .= ';');
     }
 
-    private function formatWandGroups($condition_before = false)
+    private function formatWandCondition(array $condition) : string
     {
-        $formatedWandGroups = [];
-        if(!isset($this->wand_groups))
-        {
-            $this->wand_groups = [];
-        }
-
-        $str_group = "";
-
-        foreach ($this->wand_groups as $group)
-        {
-            if($condition_before) {
-                $str_group = $group["head"]["logical_operator"];
-            }
-
-            $str_group .= " ";
-            $tags = "";
-            if(isset($group["head"]["target_num_hits"]))
-            {
-                $tags .= "{'targetNumHits': {$group["head"]["target_num_hits"]}}";
-            }
-            if(isset($group["head"]["score_threshold"]))
-            {
-                if($tags != "")
-                {
-                    $tags .= ",";
-                }
-
-                $tags .= "{'scoreThreshold': {$group["head"]["score_threshold"]}}";
-            }
-            if($tags != "")
-            {
-                $str_group .= "[$tags]";
-            }
-
-            foreach ($group["body"] as $key => $values)
-            {
-                $str_group .= "( wand($key, ";
-                $group_body = [];
-                foreach ($values[0] as $value)
-                {
-                    $weigth = intval(100 * count($values) / (count($group_body) + 1));
-                    if(is_numeric($value))
-                    {
-                        $group_body[] = "[$value, $weigth]";
-                        $isNumeric = true;
-                    }
-                    else
-                    {
-                        $group_body[] = "'$value': $weigth";
-                        $isNumeric = false;
-                    }
-                }
-                if($isNumeric)
-                {
-                    $str_group .= "[".implode(", ", $group_body)."]";
-                }
-                else
-                {
-                    $str_group .= "{".implode(", ", $group_body)."}";
-                }
-                $str_group .= "))";
-            }
-
-            $formatedWandGroups[] = $str_group;
-            $condition_before = true;
-        }
-
-        return implode("", $formatedWandGroups);
+        return "({$condition[1]} {$condition[2]}({$condition[0]}, ".json_encode($condition[3])."))";
     }
 
-    private function formatWeakAndGroups($condition_before = false)
+    private function formatWeakAndCondition(array $condition) : string
     {
-        $formatedWeakAndGroups = [];
-        if(!isset($this->weakand_groups))
-        {
-            $this->weakand_groups = [];
-        }
-
-        $str_group = "";
-
-        foreach ($this->weakand_groups as $group)
-        {
-            if($condition_before) {
-                $str_group = $group["head"]["logical_operator"];
-            }
-
-            $str_group .= " (";
-            $tags = "";
-            if(isset($group["head"]["target_num_hits"]))
-            {
-                $tags .= "{'targetNumHits': {$group["head"]["target_num_hits"]}";
-            }
-            if(isset($group["head"]["score_threshold"]))
-            {
-                if($tags != "")
-                {
-                    $tags .= ", ";
-                }
-                else
-                {
-                    $tags .= "{";
-                }
-
-                $tags .= "'scoreThreshold': {$group["head"]["score_threshold"]}";
-            }
-            if($tags != "")
-            {
-                $str_group .= "[$tags}]";
-            }
-            $str_group .= "weakAnd( ";
-            $group_body = [];
-            foreach ($group["body"] as $value)
-            {
-                $group_body[] = "$value[0] $value[1] $value[2]";
-            }
-            $str_group .= implode(", ", $group_body);
-            $str_group .= "))";
-
-            $formatedWeakAndGroups[] = $str_group;
-            $condition_before = true;
-        }
-
-        return implode("", $formatedWeakAndGroups);
+        return "";
     }
 
-    private function createWand(array $term, string $field = 'default', $group_name = null, int $target_num_hits = null, double $score_threshold = null, $logical_operator = 'AND')
+    private function formatPhraseCondition(array $condition) : string
     {
-        if(!isset($this->weakand_groups)) $this->wand_groups = [];
-        if($group_name === null) $group_name = $this->createGroupName($this->wand_groups);
-        if(is_string($group_name) && is_numeric($group_name)) $group_name = intval($group_name);
-        while (array_key_exists($group_name, $this->wand_groups)) $name++;
-        $size = count($this->wand_groups);
+        return "";
+    }
 
-        if($group_name < 0 && $size > 0) //put condition in the last group created
-        {
-            $group_name = array_keys($this->wand_groups)[$size - 1];
-        }
-        else if($group_name === null || $group_name === '' || $group_name < 0) //add new group
-        {
-            $group_name = $size;
-        }
+    private function createWand(array $term, string $field = 'default', $group_name = null, int $target_num_hits = null, float $score_threshold = null, $logical_operator = 'AND') : VespaYQLBuilder
+    {
+        $wand_option = [];
+        if($target_num_hits !== null) $wand_option["targetNumHits"] = $target_num_hits;
+        if($score_threshold !== null) $wand_option["scoreThreshold"] = $score_threshold;
+        return $this->createGroupCondition($field, 'WAND', $term, $logical_operator, $group_name, $wand_option);
+    }
 
-        $this->wand_groups[$group_name]["head"]["logical_operator"] = $logical_operator;
-        if($target_num_hits > 0) $this->wand_groups[$group_name]["head"]["target_num_hits"] = $target_num_hits;
-        if($score_threshold > 0) $this->wand_groups[$group_name]["head"]["score_threshold"] = $score_threshold;
-        $this->wand_groups[$group_name]["body"][$field][] = $term;
-
+    private function createWeakAnd(array $tokens, string $field = 'default', $group_name = null, int $target_num_hits = null, int $score_threshold = null, $logical_operator = 'AND')
+    {
+        $weakand_option = [];
+        if($target_num_hits !== null) $wand_option["targetNumHits"] = $target_num_hits;
+        if($score_threshold !== null) $wand_option["scoreThreshold"] = $score_threshold;
+        $term = "(". implode(", ", $tokens). ")";
+        $this->createGroupCondition($field, 'WEAKAND', $term, $logical_operator, $group_name, $weakand_option);
         return $this;
     }
 
-    private function createWeakAnd(string $term, string $field = 'default', $group_name = null, int $target_num_hits = null, $score_threshold = null, $logical_operator = 'AND')
+    private function createGroupCondition(string $field, string $operator, $term, $logical_operator, $group_name= null, array $operator_options= null, $allowed_operators = null)
     {
-        $operator = 'CONTAINS';
-        if(!isset($this->weakand_groups)) $this->weakand_groups = [];
-        if($group_name === null) $group_name = $this->createGroupName($this->weakand_groups);
-        if(is_string($group_name) && is_numeric($group_name)) $group_name = intval($group_name);
-        while (array_key_exists($group_name, $this->weakand_groups)) $name++;
-        $size = count($this->weakand_groups);
-
-        if($group_name < 0 && $size > 0) //put condition in the last group created
+        $parsed_operator_options = "";
+        if($operator_options !== null)
         {
-            $group_name = array_keys($this->weakand_groups)[$size - 1];
+            $parsed_operator_options = "[".json_encode($operator_options,JSON_PRESERVE_ZERO_FRACTION)."]";
         }
-        else if($group_name === null || $group_name === '' || $group_name < 0) //add new group
-        {
-            $group_name = $size;
-        }
-
-        $this->weakand_groups[$group_name]["head"]["logical_operator"] = $logical_operator;
-        if($target_num_hits > 0) $this->weakand_groups[$group_name]["head"]["target_num_hits"] = $target_num_hits;
-        if($score_threshold > 0) $this->weakand_groups[$group_name]["head"]["score_threshold"] = $score_threshold;
-        $this->weakand_groups[$group_name]["body"][] = [$field, $operator, $term];
-
+        $this->validateCommonRules($term, $operator, $logical_operator, $allowed_operators);
+        $condition = [$field, $parsed_operator_options, strtolower($operator), $term];
+        $this->addSearchConditionGroup($logical_operator, $condition, $group_name);
         return $this;
     }
 
-    private function createGroupCondition(string $field, string $operator, $term, $group_name= null, $logical_operator)
+    private function addSearchConditionGroup($logical_operator, $condition, $group_name = null)
     {
-        if(!isset($this->search_condition_groups)) $this->search_condition_groups = [];
-        if($group_name === null) $group_name = $this->createGroupName($this->search_condition_groups);
-        if(is_string($group_name) && is_numeric($group_name)) $group_name = intval($group_name);
+        $group_name = $this->validateGroupName($group_name);
+        $this->search_condition_groups[$group_name][] = ['logical_operator' => $logical_operator, 'condition' => $condition];
+        return $this;
+    }
+
+    private function getLastGroupName()
+    {
         $size = count($this->search_condition_groups);
-
-        if($group_name < 0 && $size > 0) //put condition in the last group created
-        {
-            $key = array_keys($this->search_condition_groups)[ $size - 1];
-            $this->search_condition_groups[$key][] = [$logical_operator, $field, $operator, $term];
-        }
-        else if($group_name === null || $group_name === '' || $group_name < 0) //add new group
-        {
-            $this->search_condition_groups[$size][] = [$logical_operator, $field, $operator, $term];
-        }
-        else //add new group if group_name does not exists, otherwise put condition inside it
-        {
-            $this->search_condition_groups[$group_name][] = [$logical_operator, $field, $operator, $term];
-        }
-
-        return $this;
+        if($size > 0) return array_keys($this->search_condition_groups)[$size - 1];
+        return 0;
+    }
+    private function createGroupName()
+    {
+        if (count($this->search_condition_groups) == 0) return "0";
+        $name = count($this->search_condition_groups);
+        while (array_key_exists($name, $this->search_condition_groups)) $name++;
+        return strtolower($name);
     }
 
-    private function createGroupName($group)
+    private function validateGroupName($group_name)
     {
-        if (!isset($group)) return 0;
-        $name = count($group);
-        while (array_key_exists($name, $group)) $name++;
-        return $name;
-    }
-
-    private function createCondition(string $field, string $operator, $term) : VespaYQLBuilder
-    {
-        if(!isset($this->search_conditions)) $this->search_conditions = [];
-
-        $this->search_conditions [] = "$field $operator $term";
-        return $this;
+        if($group_name == null) $group_name = $this->createGroupName();
+        if($group_name < 0) $group_name = $this->getLastGroupName();
+        return strtolower((string)($group_name));
     }
 
     private function removeSQLInjection(string $text) : string
@@ -637,4 +494,48 @@ class VespaYQLBuilder
         }
         return $tuples;
     }
+
+    private function  generateWeightedTokens(array $tokens)
+    {
+        $weighted_tokens = [];
+
+        foreach ($tokens as $key => $token)
+        {
+            $weighted_tokens["$token"] = 1;
+        }
+        return $weighted_tokens;
+    }
+
+    private function validateCommonRules($tokens, $operator, $logical_operator, array $allowed_operators = null) : bool
+    {
+        if((gettype($tokens) == "array" && $tokens == 0)  || (gettype($tokens) == "string" && $tokens == ''))
+        {
+            throw new VespaInvalidYQLQuery("There must be at least one token to be searched.");
+        }
+
+        $allowed_logical_operators = ["AND", "OR", "AND!"];
+        if(!in_array(str_replace(" ", "", strtoupper($logical_operator)), $allowed_logical_operators))
+        {
+            throw new VespaInvalidYQLQuery("The logical operator {$logical_operator} doen't exists. The allowed logical operators are: ".implode(", ", $allowed_logical_operators).".");
+        }
+
+        if((gettype($tokens) == "array" && $tokens == 0)  || (gettype($tokens) == "string" && $tokens == ''))
+        {
+            throw new VespaInvalidYQLQuery("There must be at least one token to be searched.");
+        }
+
+        if($allowed_operators == null || count($allowed_operators) == 0)
+        {
+            $allowed_operators = ["CONTAINS", "PHRASE", "MATCHES", "=", "NEAR", "ONEAR", "WAND", "WEAKAND", "EQUIV",
+                                    ">", "<", "<=", ">=", "SAMEELEMENT", "EQUIV", "PREDICATE", "NONEMPTY", "RANGE"];
+        }
+
+        if(!in_array(strtoupper($operator), $allowed_operators))
+        {
+            throw new VespaInvalidYQLQuery("The operator {$operator} is not supported by this method or it doesn't exist. The allowed operators are: ".implode(", ", $allowed_operators).".");
+        }
+        return true;
+    }
+
+    protected  $search_condition_groups;
 }
