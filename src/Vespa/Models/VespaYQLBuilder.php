@@ -508,7 +508,7 @@ class VespaYQLBuilder
 
     private function validateCommonRules($tokens, $operator, $logical_operator, array $allowed_operators = null) : bool
     {
-        if((gettype($tokens) == "array" && $tokens == 0)  || (gettype($tokens) == "string" && $tokens == ''))
+        if((gettype($tokens) == "array" && (count($tokens) == 0 || in_array('', $tokens)))  || (gettype($tokens) == "string" && ($tokens == '' || $tokens == "''" || $tokens == '""') ))
         {
             throw new VespaInvalidYQLQuery("There must be at least one token to be searched.");
         }
@@ -517,11 +517,6 @@ class VespaYQLBuilder
         if(!in_array(str_replace(" ", "", strtoupper($logical_operator)), $allowed_logical_operators))
         {
             throw new VespaInvalidYQLQuery("The logical operator {$logical_operator} doen't exists. The allowed logical operators are: ".implode(", ", $allowed_logical_operators).".");
-        }
-
-        if((gettype($tokens) == "array" && $tokens == 0)  || (gettype($tokens) == "string" && $tokens == ''))
-        {
-            throw new VespaInvalidYQLQuery("There must be at least one token to be searched.");
         }
 
         if($allowed_operators == null || count($allowed_operators) == 0)
