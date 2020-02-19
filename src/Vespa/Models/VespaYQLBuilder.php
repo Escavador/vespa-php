@@ -329,12 +329,12 @@ class VespaYQLBuilder
                     }
                 }
                 if($has_condition) $yql .= " {$search_condition["logical_operator"]} ";
+                else $has_condition = true;
                 if($index == 0) $yql .=  "(" ;
                 $yql .= " {$condition} ";
                 $index++;
             }
             $yql .= ")";
-            $has_condition = true;
         }
         if($orderBy != null) $yql .= $orderBy;
         if($limit != null) $yql .= " LIMIT $limit";
