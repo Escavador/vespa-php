@@ -422,11 +422,6 @@ class VespaYQLBuilder
         return str_replace('"', "\"", str_replace("'", "\'", $text));
     }
 
-    private function removeSpecial(sting $text) : string
-    {
-        return Utils::removeExtraSpace(str_replace('  ', '', preg_replace('/[#$%^&*()+=\-\[\]\';,.\/{}|":<>?~\\\\]/', '${1} ', $text)));
-    }
-
     private function splitTerm($term)
     {
         $term = Utils::removeExtraSpace($term);
@@ -533,4 +528,5 @@ class VespaYQLBuilder
     }
 
     protected  $search_condition_groups;
+    protected  $document_type;
 }

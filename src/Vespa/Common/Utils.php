@@ -53,4 +53,9 @@ class Utils
     {
         return trim(preg_replace("/\s+/", '${1} ', $text));
     }
+
+    public static function removeSpecialCharacters(string $text) : string
+    {
+        return preg_replace('/[#$%^&*()+=\-\[\]\';,.\/{}|":<>?~\\\\]/', '${1} ', $text);
+    }
 }
