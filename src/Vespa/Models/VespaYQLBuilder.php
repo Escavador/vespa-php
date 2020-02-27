@@ -14,6 +14,7 @@ class VespaYQLBuilder
     {
         $this->search_condition_groups = [];
         $this->document_type = [];
+        $this->used_document_type = [];
     }
 
     public final function view() : string
@@ -69,7 +70,7 @@ class VespaYQLBuilder
             {
                 $not_tokens = $weight_tokens($not_tokens);
             }
-            $this->createWand($not_tokens, $field, null, $target_num_hits, $score_threshold, "AND !");
+            $this->createWand($not_tokens, $field, null, $target_num_hits, null, "AND !");
         }
         return $this;
     }
@@ -218,7 +219,10 @@ class VespaYQLBuilder
     public function addDocumentType(string $document_type) : VespaYQLBuilder
     {
         $document_type = Utils::removeQuotes($document_type);
-        $this->document_type[] = $document_type;
+        if(!in_array($document_type, $this->document_type))
+        {
+            $this->document_type[] = $document_type;
+        }
         return $this;
     }
 
@@ -285,9 +289,11 @@ class VespaYQLBuilder
         $document_type_group = 0;
         foreach ($this->document_type as $doc_type)
         {
+            if(in_array($doc_type, $this->used_document_type)) continue;
             $logical_operator = $document_type_group == 0? "AND" : "OR";
             $group_name = $document_type_group == 0 ? null : -1;
             $this->addCondition($doc_type, 'sddocname', $group_name, $logical_operator);
+            $this->used_document_type[] = $doc_type;
             $document_type_group++;
         }
 
