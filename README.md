@@ -10,7 +10,7 @@ PHP low-level client for Vespa. https://vespa.ai/
 ## Install
 
 Via Composer
-``` bash
+```
 composer require escavador/vespa-php
 ```
 #### Config
