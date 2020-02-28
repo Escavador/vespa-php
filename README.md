@@ -29,7 +29,7 @@ Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed re
 
 
 [ico-version]: https://img.shields.io/packagist/v/escavador/vespa-php.svg?style=flat-square
-[ico-license]: https://img.shields.io/badge/license-LGPL3-brightgreen.svg?style=flat-square
+[ico-license]: https://img.shields.io/badge/license-GPL3-brightgreen.svg?style=flat-square
 [ico-downloads]: https://img.shields.io/packagist/dt/escavador/vespa-php.svg?style=flat-square
 [ico-build-status]: https://travis-ci.org/Escavador/vespa-php.svg?branch=master
 
