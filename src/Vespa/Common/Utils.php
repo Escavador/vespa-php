@@ -56,6 +56,6 @@ class Utils
 
     public static function removeSpecialCharacters(string $text) : string
     {
-        return preg_replace('/[#$%^&*()+=\-\[\]\';,.\/{}|":<>?~\\\\]/', '${1} ', $text);
+        return preg_replace('/[°ºª#$%^&*()+=\-\[\]\';,.\/{}|":<>?~\\\\]/', '${1} ', $text);
     }
 }
