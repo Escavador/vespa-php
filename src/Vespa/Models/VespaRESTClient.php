@@ -224,7 +224,6 @@ class VespaRESTClient extends AbstractClient
     public function sendDocuments(DocumentDefinition $definition, $documents)
     {
         $indexed = array();
-        $not_indexed = array();
         $document_type = $definition->getDocumentType();
         $document_namespace =  $definition->getDocumentNamespace();
 
@@ -246,14 +245,13 @@ class VespaRESTClient extends AbstractClient
                 'fulfilled' => function (Response $response, $index) use (&$chunk, &$indexed, &$document_type, &$document_namespace)
                 {
                         $document = $chunk[$index];
-                        $indexed[] = $index;
+                        $indexed[] = $document;
                         $scheme = "id:{$document_namespace}:{$document_type}::{$document->getVespaDocumentId()}";
                         $this->logger->log("Document $scheme was indexed to Vespa", 'debug');
                 },
-                'rejected' => function (RequestException $reason, $index) use (&$definition, &$not_indexed, &$chunk, &$document_type, &$document_namespace)
+                'rejected' => function (RequestException $reason, $index) use (&$definition, &$chunk, &$document_type, &$document_namespace)
                 {
                     $document = $chunk[$index];
-                    $not_indexed[] = $index;
                     $e = new VespaFailSendDocumentException($definition, $document, $reason->getCode(), $reason->getMessage());
                     $this->logger->log($e->getMessage(), 'error');
                     VespaExceptionSubject::notifyObservers($e);
@@ -267,9 +265,6 @@ class VespaRESTClient extends AbstractClient
             $promise->wait();
         }
 
-        return [
-            "indexed" => $indexed,
-            "not_indexed" => $not_indexed
-        ];
+        return $indexed;
     }
 }

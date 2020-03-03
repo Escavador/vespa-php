@@ -3,11 +3,11 @@
 namespace Escavador\Vespa\Commands;
 
 use Carbon\Carbon;
-use Escavador\Vespa\Common\EnumModelStatusVespa;
 use Escavador\Vespa\Common\LogManager;
 use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Common\VespaExceptionSubject;
 use Escavador\Vespa\Exception\VespaException;
+use Escavador\Vespa\Jobs\FeedDocumentJob;
 use Escavador\Vespa\Models\DocumentDefinition;
 use Escavador\Vespa\Models\SimpleClient;
 use Illuminate\Console\Command;
@@ -33,7 +33,7 @@ class FeedCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Feed the vespa with models.';
+    protected $description = 'Feed the Vespa with documents.';
 
     protected $limit;
 
@@ -50,7 +50,6 @@ class FeedCommand extends Command
         parent::__construct();
         $this->vespa_status_column = config('vespa.model_columns.status', 'vespa_status');
         $this->vespa_date_column = config('vespa.model_columns.date', 'vespa_last_indexed_date');
-
         $this->document_definitions = DocumentDefinition::loadDefinition();
         $this->vespa_client = Utils::defaultVespaClient();
 
@@ -69,10 +68,12 @@ class FeedCommand extends Command
         $start_time = Carbon::now();
 
         $all = $this->option('all');
+        $async = $this->option('async');
         $models = $this->option('model');
         $limit = $this->option('limit');
         $bulk = $this->option('bulk');
         $time_out = $this->option('time-out');
+        $queue = $this->option('queue');
 
         if (!is_array($models))
         {
@@ -127,6 +128,11 @@ class FeedCommand extends Command
             $bulk = $limit;
         }
 
+        if ($queue && !$async)
+        {
+            $this->message('warn', '['.implode(',', $models) . ']: The [queue] argument only taken into account if the feed is async.');
+        }
+
         $this->limit = intval($limit);
         $this->bulk = intval($bulk);
 
@@ -170,21 +176,27 @@ class FeedCommand extends Command
             }
 
             $this->message('info', "[$model]: Feed is already!");
+            $model_class = $model_definition->getModelClass();
+            $model = $model_definition->getDocumentType();
 
-            //TODO: make this async
-            try
+            if($async)
             {
-                $was_fed = $this->process($model_definition);
+                $this->processAsync($model_definition, $model_class, $model, $queue);
             }
-            catch (\Exception $ex)
+            else
             {
-                $e = new VespaException("[$model]: Processing failed. Error: ". $ex->getMessage());
-                VespaExceptionSubject::notifyObservers($e);
-                $this->message('error', $e->getMessage());
-                exit(1);
+                try
+                {
+                    $was_fed = $this->processNow($model_definition, $model_class, $model);
+                }
+                catch (\Exception $ex)
+                {
+                    $e = new VespaException("[$model]: Processing failed. Error: ". $ex->getMessage());
+                    VespaExceptionSubject::notifyObservers($e);
+                    $this->message('error', $e->getMessage());
+                    exit(1);
+                }
             }
-
-            unset($temp_model);
         }
 
         if($was_fed)
@@ -216,6 +228,8 @@ class FeedCommand extends Command
             array('limit', 'L', InputOption::VALUE_OPTIONAL, 'Limit of model to feed Vespa', $this->getLimitDefault()),
             array('time-out', 'T', InputOption::VALUE_OPTIONAL, 'Defines the execution timeout', $this->time_out), //TODO testing this
             array('all', 'A', InputOption::VALUE_NONE, 'Feed all mapped models on Vespa config'),
+            array('async', 'J', InputOption::VALUE_NONE, 'Create feed job to run async'),
+            array('queue', 'Q', InputOption::VALUE_OPTIONAL, 'Queue that receive feed jobs'),
             array('bulk', 'B', InputOption::VALUE_OPTIONAL, 'description here', $this->getBulkDefault()),
 
             //TODO arguments
@@ -247,11 +261,8 @@ class FeedCommand extends Command
         $this->logger->log($text, $type);
     }
 
-    private function process($model_definition)
+    private function processNow($model_definition, $model_class, $model)
     {
-        $model_class = $model_definition->getModelClass();
-        $model = $model_definition->getDocumentType();
-
         $items = $this->limit;
         $total_indexed = 0;
         while($items > 0)
@@ -268,7 +279,6 @@ class FeedCommand extends Command
             }
 
             $documents = $model_class::getVespaDocumentsToIndex($requested_documents);
-
             $count_docs = count($documents);
 
             if ($documents !== null && $count_docs <= 0)
@@ -279,21 +289,79 @@ class FeedCommand extends Command
 
             //Records on vespa
             $result = $this->vespa_client->sendDocuments($model_definition, $documents);
-            $indexed = $result["indexed"];
-            $not_indexed = $result["not_indexed"];
+            $indexed = [];
+            $not_indexed = [];
+            foreach ($documents as $document)
+            {
+                if(in_array($document, $result))
+                {
+                    $indexed[] = $document;
+                }
+                else
+                {
+                    $not_indexed[] = $document;
+                }
+            }
 
             $count_indexed = count($indexed);
             $total_indexed += $count_indexed;
 
-            $this->message('debug', "[$model]:". $count_indexed . " of " . count($documents) . " were indexed in Vespa.");
-
             //Update model's vespa info in database
-            $model_class::markAsVespaIndexed($documents, $indexed);
-            $model_class::markAsVespaNotIndexed($documents, $not_indexed);
+            $model_class::markAsVespaIndexed(collect($indexed)->pluck('id')->all());
+            $model_class::markAsVespaNotIndexed(collect($not_indexed)->pluck('id')->all());
+
+            $this->message('debug', "[$model]:". $count_indexed . " of " . count($documents) . " were indexed in Vespa.");
         }
 
         $this->message('info', "[$model]: $total_indexed/$this->limit was done.");
 
         return $total_indexed > 0;
+    }
+
+    private function processAsync($model_definition, $model_class, $model, $queue = null)
+    {
+        $items = $this->limit;
+        $total_scheduled = 0;
+        $total_documents = 0;
+        while($items > 0)
+        {
+            if($items >= $this->bulk)
+            {
+                $items -= $this->bulk;
+                $requested_documents = $this->bulk;
+            }
+            else
+            {
+                $requested_documents = $items;
+                $items = 0;
+            }
+
+            $document_ids = $model_class::getVespaDocumentIdsToIndex($requested_documents);
+            $count_docs = count($document_ids);
+
+            if ($document_ids !== null && $count_docs <= 0)
+            {
+                $this->message('info', "[$model] already up-to-date.");
+                break;
+            }
+
+            // Create FeedJob
+            try
+            {
+                $model_class::markAsVespaIndexed($document_ids);
+                FeedDocumentJob::dispatch($model_definition, $model_class, $model, $document_ids, $queue);
+            }
+            catch (\Exception $ex)
+            {
+                $model_class::markAsVespaNotIndexed($document_ids);
+                $this->message('debug', "[$model]: Failed to create job FeedDocumentJob." . $ex->getMessage());
+                return false;
+            }
+
+            $total_documents += $count_docs;
+            $total_scheduled++;
+        }
+        $this->message('info', "[$model]: $total_scheduled FeedDocumentJob jobs are created with $total_documents documents.");
+        return $total_scheduled > 0;
     }
 }
