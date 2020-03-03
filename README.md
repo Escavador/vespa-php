@@ -7,6 +7,10 @@
 ## Introduction
 PHP low-level client for Vespa. https://vespa.ai/
 
+## Compatibility
+currently, the library is only compatible with Vespa 7.x and Laravel 5.8.x.
+
+
 ## Install
 
 Via Composer
