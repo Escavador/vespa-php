@@ -82,8 +82,8 @@ class FeedDocumentJob implements ShouldQueue
         }
         catch (\Exception $ex)
         {
-            $this->model_class::markAsVespaIndexed(collect($documents)->pluck('id')->all());
-            VespaExceptionSubject::notifyObservers($e);
+            $this->model_class::markAsVespaNotIndexed(collect($documents)->pluck('id')->all());
+            VespaExceptionSubject::notifyObservers($ex);
             throw $ex;
         }
         $total_duration = Carbon::now()->diffInSeconds($start_time);

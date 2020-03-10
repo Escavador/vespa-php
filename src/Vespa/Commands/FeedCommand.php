@@ -191,9 +191,9 @@ class FeedCommand extends Command
                 }
                 catch (\Exception $ex)
                 {
-                    $e = new VespaException("[$model]: Processing failed. Error: ". $ex->getMessage());
-                    VespaExceptionSubject::notifyObservers($e);
-                    $this->message('error', $e->getMessage());
+                    $ex = new VespaException("[$model]: Processing failed. Error: ". $ex->getMessage());
+                    VespaExceptionSubject::notifyObservers($ex);
+                    $this->message('error', $ex->getMessage());
                     exit(1);
                 }
             }
@@ -284,7 +284,7 @@ class FeedCommand extends Command
             if ($documents !== null && $count_docs <= 0)
             {
                 $this->message('info', "[$model] already up-to-date.");
-                break;
+                return false;
             }
 
             //Records on vespa
