@@ -4,7 +4,7 @@ namespace Escavador\Vespa\Models;
 
 use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Exception\VespaException;
-use Escavador\Vespa\Exception\VespaInvalidYQLQuery;
+use Escavador\Vespa\Exception\VespaInvalidYQLQueryException;
 use Escavador\Vespa\Interfaces\AbstractClient;
 use Escavador\Vespa\Interfaces\VespaResult;
 
@@ -88,7 +88,7 @@ class VespaYQLBuilder
 
                 if($term == "")
                 {
-                    throw new VespaInvalidYQLQuery("Searching for blank strings is not allowed.");
+                    throw new VespaInvalidYQLQueryException("Searching for blank strings is not allowed.");
                 }
 
                 if(strcasecmp("CONTAINS", $operator) === 0)
@@ -103,7 +103,7 @@ class VespaYQLBuilder
                     continue;
                 }
             }
-            throw new VespaInvalidYQLQuery("Tokens for the weakAnd operator must be formed by [[operator => term], ...]. Allowed operators are: CONTAINS or PHRASE.");
+            throw new VespaInvalidYQLQueryException("Tokens for the weakAnd operator must be formed by [[operator => term], ...]. Allowed operators are: CONTAINS or PHRASE.");
         }
         $this->createWeakAnd($parsed_tokens, $field, $group_name, $target_num_hits, $score_threshold, $logical_operator);
         return $this;
@@ -173,7 +173,7 @@ class VespaYQLBuilder
     public function addNumericCondition($term, string $field = 'default', string $operator = '=', string $logical_operator = "AND", $group_name = null) : VespaYQLBuilder
     {
         $allowed_operators = ["=", ">", "<", "<=", ">="];
-        if(!is_numeric($term)) throw new VespaInvalidYQLQuery("The variable '\$term' ({$term}) must be numeric.");
+        if(!is_numeric($term)) throw new VespaInvalidYQLQueryException("The variable '\$term' ({$term}) must be numeric.");
         return $this->createGroupCondition($field, $operator, $term, $logical_operator, $group_name, null, $allowed_operators);
     }
 
@@ -244,7 +244,7 @@ class VespaYQLBuilder
     {
         if(strtoupper($order) != "DESC" and strtoupper($order) != "ASC")
         {
-            throw new VespaInvalidYQLQuery("Syntax Error. The property \"order by\" should be \"DESC\" or \"ASC\"");
+            throw new VespaInvalidYQLQueryException("Syntax Error. The property \"order by\" should be \"DESC\" or \"ASC\"");
         }
 
         if(!isset($this->orderBy))
@@ -511,13 +511,13 @@ class VespaYQLBuilder
     {
         if((gettype($tokens) == "array" && (count($tokens) == 0 || in_array('', $tokens)))  || (gettype($tokens) == "string" && ($tokens == '' || $tokens == "''" || $tokens == '""') ))
         {
-            throw new VespaInvalidYQLQuery("There must be at least one token to be searched.");
+            throw new VespaInvalidYQLQueryException("There must be at least one token to be searched.");
         }
 
         $allowed_logical_operators = ["AND", "OR", "AND!"];
         if(!in_array(str_replace(" ", "", strtoupper($logical_operator)), $allowed_logical_operators))
         {
-            throw new VespaInvalidYQLQuery("The logical operator {$logical_operator} doen't exists. The allowed logical operators are: ".implode(", ", $allowed_logical_operators).".");
+            throw new VespaInvalidYQLQueryException("The logical operator {$logical_operator} doen't exists. The allowed logical operators are: ".implode(", ", $allowed_logical_operators).".");
         }
 
         if($allowed_operators == null || count($allowed_operators) == 0)
@@ -528,7 +528,7 @@ class VespaYQLBuilder
 
         if(!in_array(strtoupper($operator), $allowed_operators))
         {
-            throw new VespaInvalidYQLQuery("The operator {$operator} is not supported by this method or it doesn't exist. The allowed operators are: ".implode(", ", $allowed_operators).".");
+            throw new VespaInvalidYQLQueryException("The operator {$operator} is not supported by this method or it doesn't exist. The allowed operators are: ".implode(", ", $allowed_operators).".");
         }
         return true;
     }

@@ -42,7 +42,7 @@ class VespaRESTClient extends AbstractClient
         parent::__construct();
         $this->client = new Client();
         $this->max_concurrency = config('vespa.default.vespa_rest_client.max_concurrency', 6);
-        $this->max_parallel_requests = intval(config('vespa.default.max_parallel_feed_requests', 1000));
+        $this->max_parallel_requests = intval(config('vespa.default.max_parallel_requests.feed', 1000));
         $this->logger =  new LogManager();
 
         if($headers)
@@ -63,7 +63,7 @@ class VespaRESTClient extends AbstractClient
         }
         catch (\Exception $ex)
         {
-            $e = new VespaFailSearchException($data, $ex->getCode(), $ex->getMessage());
+            $e = new VespaFailSearchException($data, $ex);
             $this->logger->log($e->getMessage(), 'error');
             VespaExceptionSubject::notifyObservers($e);
             throw $e;
@@ -79,7 +79,7 @@ class VespaRESTClient extends AbstractClient
                 return new SearchResult($content);
         }
 
-        $e = new VespaFailSearchException($data, $response->getStatusCode(), $response->getBody()->getContents());
+        $e = new VespaFailSearchException($data, new \Exception($response->getBody()->getContents(), $response->getStatusCode()));
         $this->logger->log($e->getMessage(), 'error');
         VespaExceptionSubject::notifyObservers($e);
         throw $e;
@@ -95,7 +95,7 @@ class VespaRESTClient extends AbstractClient
             $response = $this->client->delete($url, ['headers' => $this->headers]);
         } catch (\Exception $ex)
         {
-            $e = new VespaFailDeleteDocumentException($definition, $scheme, $ex->getCode(), $ex->getMessage());
+            $e = new VespaFailDeleteDocumentException($definition, $scheme, $ex);
             $this->logger->log($e->getMessage(), 'error');
             VespaExceptionSubject::notifyObservers($e);
             throw $e;
@@ -112,7 +112,7 @@ class VespaRESTClient extends AbstractClient
         }
         else
         {
-            $e = new VespaFailDeleteDocumentException($definition, $scheme, $response->getStatusCode(), $response->getBody()->getContents());
+            $e = new VespaFailDeleteDocumentException($definition, $scheme, new \Exception($response->getBody()->getContents(), $response->getStatusCode()));
             $this->logger->log($e->getMessage(), 'error');
             VespaExceptionSubject::notifyObservers($e);
             throw $e;
@@ -131,7 +131,7 @@ class VespaRESTClient extends AbstractClient
 
         } catch (\Exception $ex)
         {
-            $e = new VespaFailUpdateDocumentException($definition, $document, $response->getStatusCode(), $response->getBody()->getContents());
+            $e = new VespaFailUpdateDocumentException($definition, $document, $ex);
             $this->logger->log($e->getMessage(), 'error');
             VespaExceptionSubject::notifyObservers($e);
             throw $e;
@@ -146,7 +146,7 @@ class VespaRESTClient extends AbstractClient
         }
         else
         {
-            $e = new VespaFailUpdateDocumentException($definition, $document, $response->getStatusCode(), $response->getBody()->getContents());
+            $e = new VespaFailUpdateDocumentException($definition, $document, new \Exception($response->getBody()->getContents(), $response->getStatusCode()));
             $this->logger->log($e->getMessage(), 'error');
             VespaExceptionSubject::notifyObservers($e);
             throw $e;
@@ -162,7 +162,7 @@ class VespaRESTClient extends AbstractClient
             $response = $this->client->get($url, ['headers' => $this->headers]);
         } catch (\Exception $ex)
         {
-            $e = new VespaFailGetDocumentException($definition, $scheme, $ex->getCode(), $ex->getMessage());
+            $e = new VespaFailGetDocumentException($definition, $scheme, $ex);
             $this->logger->log($e->getMessage(), 'error');
             VespaExceptionSubject::notifyObservers($e);
             throw $e;
@@ -179,7 +179,7 @@ class VespaRESTClient extends AbstractClient
         }
         else
         {
-            $e = new VespaFailGetDocumentException($definition, $scheme, $response->getStatusCode(), $response->getBody()->getContents());
+            $e = new VespaFailGetDocumentException($definition, $scheme, new \Exception($response->getBody()->getContents(), $response->getStatusCode()));
             $this->logger->log($e->getMessage(), 'error');
             VespaExceptionSubject::notifyObservers($e);
             throw $e;
@@ -199,7 +199,7 @@ class VespaRESTClient extends AbstractClient
         }
         catch (\Exception $ex)
         {
-            $e = new VespaFailSendDocumentException($definition, $document, $ex->getCode(),  $ex->getMessage());
+            $e = new VespaFailSendDocumentException($definition, $document, $ex);
             $this->logger->log($e->getMessage(), 'error');
             VespaExceptionSubject::notifyObservers($e);
             throw $e;
@@ -214,7 +214,7 @@ class VespaRESTClient extends AbstractClient
         }
         else
         {
-            $e = new VespaFailSendDocumentException($definition, $document, $response->getStatusCode(),  $response->getBody()->getContents());
+            $e = new VespaFailSendDocumentException($definition, $document, new \Exception($response->getBody()->getContents(), $response->getStatusCode()));
             $this->logger->log($e->getMessage(), 'error');
             VespaExceptionSubject::notifyObservers($e);
             throw $e;
@@ -252,7 +252,7 @@ class VespaRESTClient extends AbstractClient
                 'rejected' => function (RequestException $reason, $index) use (&$definition, &$chunk, &$document_type, &$document_namespace)
                 {
                     $document = $chunk[$index];
-                    $e = new VespaFailSendDocumentException($definition, $document, $reason->getCode(), $reason->getMessage());
+                    $e = new VespaFailSendDocumentException($definition, $document, $reason);
                     $this->logger->log($e->getMessage(), 'error');
                     VespaExceptionSubject::notifyObservers($e);
                 },

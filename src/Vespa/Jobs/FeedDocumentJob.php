@@ -7,6 +7,7 @@ use Escavador\Vespa\Common\LogManager;
 use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Common\VespaExceptionSubject;
 use Escavador\Vespa\Exception\VespaException;
+use Escavador\Vespa\Exception\VespaFeedException;
 use Escavador\Vespa\Models\DocumentDefinition;
 use GuzzleHttp\Client;
 use Illuminate\Bus\Queueable;
@@ -27,6 +28,8 @@ class FeedDocumentJob implements ShouldQueue
     protected $model_definition;
     protected $vespa_client;
     protected $logger;
+    protected $update_chunk_size;
+
 
     public function __construct(DocumentDefinition $model_definition, string $model_class, $model, array $document_ids, string $queue = null)
     {
@@ -34,6 +37,8 @@ class FeedDocumentJob implements ShouldQueue
         $this->model_class = $model_class;
         $this->model = $model;
         $this->document_ids = $document_ids;
+        $this->update_chunk_size =  intval(config('vespa.default.max_parallel_requests.update', 1000));
+
         if($queue == null)
         {
             $queue = config('vespa.default.queue', 'vespa');
@@ -48,13 +53,20 @@ class FeedDocumentJob implements ShouldQueue
      */
     public function handle()
     {
-        $start_time = Carbon::now();
-        $this->logger =  new LogManager();
-        $this->vespa_client = Utils::defaultVespaClient();
 
-        $documents = $this->model_class::getVespaDocumentsToIndex(count($this->document_ids), $this->document_ids);
         try
         {
+            $start_time = Carbon::now();
+            $this->logger =  new LogManager();
+            $this->vespa_client = Utils::defaultVespaClient();
+            $documents = $this->model_class::getVespaDocumentsToIndex(count($this->document_ids), $this->document_ids);
+
+            if(count($documents) == 0)
+            {
+                $this->logger->log("[$this->model]: No documents to be indexed were returned", "info");
+                throw new VespaFeedException($this->model, "It was not possible to index any document to the Vespa.");
+            }
+
             //Records on vespa
             $result = $this->vespa_client->sendDocuments($this->model_definition, $documents);
             $indexed = [];
@@ -74,17 +86,30 @@ class FeedDocumentJob implements ShouldQueue
             $count_indexed = count($indexed);
             if($count_indexed == 0)
             {
-                throw new VespaException("It was not possible to index any document to the Vespa.");
+                throw new VespaFeedException($this->model, "It was not possible to index any document to the Vespa.");
             }
             //Update model's vespa info in database
-            $this->model_class::markAsVespaIndexed(collect($indexed)->pluck('id')->all());
-            $this->model_class::markAsVespaNotIndexed(collect($not_indexed)->pluck('id')->all());
+            $documents_chunk = array_chunk(collect($indexed)->pluck('id')->unique()->all(), $this->update_chunk_size);
+            foreach ($documents_chunk as $chunk)
+            {
+                $model_class::markAsVespaIndexed($chunk);
+            }
+            $documents_chunk = array_chunk(collect($not_indexed)->pluck('id')->unique()->all(), $this->update_chunk_size);
+            foreach ($documents_chunk as $chunk)
+            {
+                $model_class::markAsVespaNotIndexed($chunk);
+            }
         }
         catch (\Exception $ex)
         {
-            $this->model_class::markAsVespaNotIndexed(collect($documents)->pluck('id')->all());
-            VespaExceptionSubject::notifyObservers($ex);
-            throw $ex;
+            $documents_chunk = array_chunk(collect($not_indexed)->pluck('id')->unique()->all(), $this->update_chunk_size);
+            foreach ($documents_chunk as $chunk)
+            {
+                $model_class::markAsVespaNotIndexed($chunk);
+            }
+            $e = new VespaFeedException($this->model, $ex);
+            VespaExceptionSubject::notifyObservers($e);
+            throw $e;
         }
         $total_duration = Carbon::now()->diffInSeconds($start_time);
         $this->logger->log("[$this->model]: Vespa was fed in ". gmdate('H:i:s:m', $total_duration), "info");

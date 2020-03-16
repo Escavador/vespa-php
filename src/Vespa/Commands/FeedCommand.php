@@ -7,6 +7,7 @@ use Escavador\Vespa\Common\LogManager;
 use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Common\VespaExceptionSubject;
 use Escavador\Vespa\Exception\VespaException;
+use Escavador\Vespa\Exception\VespaFeedException;
 use Escavador\Vespa\Jobs\FeedDocumentJob;
 use Escavador\Vespa\Models\DocumentDefinition;
 use Escavador\Vespa\Models\SimpleClient;
@@ -45,11 +46,14 @@ class FeedCommand extends Command
 
     protected $vespa_client;
 
+    protected $update_chunk_size;
+
     public function __construct()
     {
         parent::__construct();
         $this->vespa_status_column = config('vespa.model_columns.status', 'vespa_status');
         $this->vespa_date_column = config('vespa.model_columns.date', 'vespa_last_indexed_date');
+        $this->update_chunk_size =  intval(config('vespa.default.max_parallel_requests.update', 1000));
         $this->document_definitions = DocumentDefinition::loadDefinition();
         $this->vespa_client = Utils::defaultVespaClient();
 
@@ -191,9 +195,9 @@ class FeedCommand extends Command
                 }
                 catch (\Exception $ex)
                 {
-                    $ex = new VespaException("[$model]: Processing failed. Error: ". $ex->getMessage());
-                    VespaExceptionSubject::notifyObservers($ex);
-                    $this->message('error', $ex->getMessage());
+                    $e = new VespaFeedException($model, $ex);
+                    VespaExceptionSubject::notifyObservers($e);
+                    $this->message('error', $e->getMessage());
                     exit(1);
                 }
             }
@@ -307,10 +311,17 @@ class FeedCommand extends Command
             $total_indexed += $count_indexed;
 
             //Update model's vespa info in database
-            $model_class::markAsVespaIndexed(collect($indexed)->pluck('id')->all());
-            $model_class::markAsVespaNotIndexed(collect($not_indexed)->pluck('id')->all());
-
-            $this->message('debug', "[$model]:". $count_indexed . " of " . count($documents) . " were indexed in Vespa.");
+            $documents_chunk = array_chunk(collect($indexed)->pluck('id')->unique()->all(), $this->update_chunk_size);
+            foreach ($documents_chunk as $chunk)
+            {
+                $model_class::markAsVespaIndexed($chunk);
+            }
+            $documents_chunk = array_chunk(collect($not_indexed)->pluck('id')->unique()->all(), $this->update_chunk_size);
+            foreach ($documents_chunk as $chunk)
+            {
+                $model_class::markAsVespaNotIndexed($chunk);
+            }
+            $this->message('debug', "[$model]:". $count_indexed . " of " . $count_docs . " were indexed in Vespa.");
         }
 
         $this->message('info', "[$model]: $total_indexed/$this->limit was done.");
@@ -348,13 +359,23 @@ class FeedCommand extends Command
             // Create FeedJob
             try
             {
-                $model_class::markAsVespaIndexed($document_ids);
+                $documents_chunk = array_chunk($document_ids, $this->update_chunk_size);
+                foreach ($documents_chunk as $chunk)
+                {
+                    $model_class::markAsVespaIndexed($chunk);
+                }
                 FeedDocumentJob::dispatch($model_definition, $model_class, $model, $document_ids, $queue);
             }
             catch (\Exception $ex)
             {
-                $model_class::markAsVespaNotIndexed($document_ids);
-                $this->message('debug', "[$model]: Failed to create job FeedDocumentJob." . $ex->getMessage());
+                $documents_chunk = array_chunk($document_ids, $this->update_chunk_size);
+                foreach ($documents_chunk as $chunk)
+                {
+                    $model_class::markAsVespaNotIndexed($chunk);
+                }
+                $e = new VespaFeedException($model, $ex, "Failed to create job FeedDocumentJob.");
+                VespaExceptionSubject::notifyObservers($e);
+                $this->message('debug', $e->getMessage());
                 return false;
             }
 
