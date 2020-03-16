@@ -4,12 +4,14 @@ namespace Escavador\Vespa\Exception;
 class VespaFailDeleteDocumentException extends VespaException
 {
     protected $definition;
+    protected $scheme;
 
-    public function __construct($definition, $scheme, $code, $message)
+    public function __construct($definition, string $scheme, \Exception $exception = null)
     {
-        $this->code = $code;
+        parent::__construct("[{$definition->getDocumentType()}]: An error occurred while deleting the document to the scheme : $scheme.", $exception);
+
+        $this->code = 100;
         $this->definition = $definition;
-        $this->message = "[{$definition->getDocumentType()}]: An error occurred while deleting the document to the scheme : $scheme.".
-                         "Exception Message: $message";
+        $this->scheme = $scheme;
     }
 }

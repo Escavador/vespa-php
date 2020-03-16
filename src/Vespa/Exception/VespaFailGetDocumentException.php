@@ -6,12 +6,14 @@ use Escavador\Vespa\Models\DocumentDefinition;
 class VespaFailGetDocumentException extends VespaException
 {
     protected $definition;
+    protected $scheme;
 
-    public function __construct(DocumentDefinition $definition, $scheme, $code, $message)
+    public function __construct(DocumentDefinition $definition, string $scheme, \Exception $exception)
     {
-        $this->code = $code;
+        parent::__construct("[{$definition->getDocumentType()}]: An error occurred while getting the document to the scheme : $scheme", $exception);
+
+        $this->code = 200;
         $this->definition = $definition;
-        $this->message = "[{$definition->getDocumentType()}]: An error occurred while getting the document to the scheme : $scheme.".
-                         "Exception Message: $message";
+        $this->scheme = $scheme;
     }
 }

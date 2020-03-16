@@ -5,13 +5,13 @@ use Escavador\Vespa\Models\DocumentDefinition;
 
 class VespaFailSearchException extends VespaException
 {
-    protected $data;
+    protected $payload;
 
-    public function __construct(array $data, $code, $message)
+    public function __construct(array $data, \Exception $exception = null)
     {
-        $this->code = $code;
-        $this->data = $data;
-        $this->message = "An error occurred while performing the search on Vespa.".
-                         " Exception Message: $message. Payload: ". json_encode($this->data);
+        parent::__construct("An error occurred while performing the search on Vespa. Payload: ". json_encode($data), $exception);
+
+        $this->code = 300;
+        $this->payload = $data;
     }
 }
