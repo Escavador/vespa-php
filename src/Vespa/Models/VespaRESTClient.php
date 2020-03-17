@@ -196,25 +196,19 @@ class VespaRESTClient extends AbstractClient
                 RequestOptions::JSON => array('fields' => $document->getVespaDocumentFields())
             ]);
 
+            if($response->getStatusCode() == 200)
+            {
+                return $document;
+            }
+            else
+            {
+                throw new \Exception($response->getBody()->getContents(), $response->getStatusCode());
+            }
+
         }
         catch (\Exception $ex)
         {
             $e = new VespaFailSendDocumentException($definition, $document, $ex);
-            $this->logger->log($e->getMessage(), 'error');
-            VespaExceptionSubject::notifyObservers($e);
-            throw $e;
-        }
-
-        if($response->getStatusCode() == 200)
-        {
-            $content = $response->getBody()->getContents();
-            $content = json_decode($content);
-
-            return $content;
-        }
-        else
-        {
-            $e = new VespaFailSendDocumentException($definition, $document, new \Exception($response->getBody()->getContents(), $response->getStatusCode()));
             $this->logger->log($e->getMessage(), 'error');
             VespaExceptionSubject::notifyObservers($e);
             throw $e;
