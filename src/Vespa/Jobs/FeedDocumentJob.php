@@ -30,7 +30,6 @@ class FeedDocumentJob implements ShouldQueue
     protected $logger;
     protected $update_chunk_size;
 
-
     public function __construct(DocumentDefinition $model_definition, string $model_class, $model, array $document_ids, string $queue = null)
     {
         $this->model_definition = $model_definition;
@@ -53,7 +52,6 @@ class FeedDocumentJob implements ShouldQueue
      */
     public function handle()
     {
-
         try
         {
             $start_time = Carbon::now();
@@ -86,9 +84,9 @@ class FeedDocumentJob implements ShouldQueue
             $count_indexed = count($indexed);
             if($count_indexed == 0)
             {
-                throw new VespaFeedException($this->model, "It was not possible to index any document to the Vespa.");
+                throw new VespaFeedException($this->model,  null, "It was not possible to index any document to the Vespa.");
             }
-            //Update model's vespa info in database
+            // Update model's vespa info in database
             $documents_chunk = array_chunk(collect($indexed)->pluck('id')->unique()->all(), $this->update_chunk_size);
             foreach ($documents_chunk as $chunk)
             {
