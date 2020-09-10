@@ -2,11 +2,8 @@
 
 namespace Escavador\Vespa\Common;
 
-use Carbon\Carbon;
+use Escavador\Vespa\Enums\LogManagerOptionsEnum;
 use Illuminate\Support\Facades\Log;
-use Monolog\Formatter\LineFormatter;
-use Monolog\Handler\StreamHandler;
-use Monolog\Logger;
 
 class LogManager
 {
@@ -17,19 +14,19 @@ class LogManager
         $this->channel = config('vespa.default.log.channel', 'daily');
     }
 
-    public function log(string $message, string $type = 'debug')
+    public function log(string $message, string $type = LogManagerOptionsEnum::DEBUG)
     {
         switch ($type)
         {
-            case 'error':
-            case 'err':
+            case LogManagerOptionsEnum::ERROR:
+            case LogManagerOptionsEnum::ERR:
                 Log::channel($this->channel)->error($message);
                 break;
-            case 'info':
+            case LogManagerOptionsEnum::INFO:
                 Log::channel($this->channel)->info($message);
                 break;
-            case 'warn':
-            case 'warning':
+            case LogManagerOptionsEnum::WARN:
+            case LogManagerOptionsEnum::WARNING:
                 Log::channel($this->channel)->warn($message);
                 break;
             default:

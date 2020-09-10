@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Escavador\Vespa\Common\LogManager;
 use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Common\VespaExceptionSubject;
+use Escavador\Vespa\Enums\LogManagerOptionsEnum;
 use Escavador\Vespa\Exception\VespaFailDeleteDocumentException;
 use Escavador\Vespa\Exception\VespaFailGetDocumentException;
 use Escavador\Vespa\Exception\VespaFailSearchException;
@@ -55,6 +56,7 @@ class VespaRESTClient extends AbstractClient
     {
         try
         {
+            $data = Utils::utf8ize($data);
             $this->logger->log("Running the search on the Vespa server: ". json_encode($data), 'debug');
             $response = $this->client->post(Utils::vespaSearchEndPoint(), [
                 'headers' => $this->headers,
@@ -163,7 +165,7 @@ class VespaRESTClient extends AbstractClient
         } catch (\Exception $ex)
         {
             $e = new VespaFailGetDocumentException($definition, $scheme, $ex);
-            $this->logger->log($e->getMessage(), 'error');
+            $this->logger->log($e->getMessage(), LogManagerOptionsEnum::ERROR);
             VespaExceptionSubject::notifyObservers($e);
             throw $e;
         }

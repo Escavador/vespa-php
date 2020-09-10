@@ -1,18 +1,16 @@
 <?php
+
 namespace Escavador\Vespa\Exception;
 
 class VespaFeedException extends VespaException
 {
     protected $model;
 
-    public function __construct(string $model, \Exception $exception=null, string $message=null)
+    public function __construct(string $model, \Exception $exception = null, string $message = null)
     {
-        if(!$message)
-        {
+        if (!$message) {
             parent::__construct("[{$model}] Feed process failed", $exception);
-        }
-        else
-        {
+        } else {
             parent::__construct("[{$model}] $message", $exception);
         }
 

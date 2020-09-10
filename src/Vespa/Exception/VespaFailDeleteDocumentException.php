@@ -1,4 +1,5 @@
 <?php
+
 namespace Escavador\Vespa\Exception;
 
 class VespaFailDeleteDocumentException extends VespaException

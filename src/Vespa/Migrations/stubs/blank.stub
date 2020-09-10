@@ -1,6 +1,6 @@
 <?php
 
-use Escavador\Vespa\Common\EnumModelStatusVespa;
+use Escavador\Vespa\Enums\ModelStatusVespaEnum;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
@@ -21,8 +21,8 @@ class DummyClass extends Migration
     public function up()
     {
         Schema::table($this->table, function (Blueprint $table) {
-            $table->enum($this->vespa_status, array(EnumModelStatusVespa::NOT_INDEXED, EnumModelStatusVespa::INDEXED))
-                ->default(EnumModelStatusVespa::NOT_INDEXED)
+            $table->enum($this->vespa_status, array(ModelStatusVespaEnum::NOT_INDEXED, ModelStatusVespaEnum::INDEXED))
+                ->default(ModelStatusVespaEnum::NOT_INDEXED)
                 ->comment($this->comment_vespa_status);
 
             $table->dateTime($this->vespa_last_indexed_date)

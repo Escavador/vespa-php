@@ -302,12 +302,12 @@ class VespaQuery
 
     public final function modelRestrict(array $restrict) : VespaQuery
     {
-        return $this->model('restrict', $restrict);
+        return $this->model('restrict', implode(", ", $restrict));
     }
 
     public final function modelSources(array $sources) : VespaQuery
     {
-        return $this->model('sources', $sources);
+        return $this->model('sources', implode(", ", $sources));
     }
 
     public final function modelLanguage(string $language) : VespaQuery

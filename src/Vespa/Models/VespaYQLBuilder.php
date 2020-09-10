@@ -189,10 +189,12 @@ class VespaYQLBuilder
         return $this->addSearchConditionGroup($logical_operator, [$condition], $group_name);
     }
 
-    public function addCondition(string $term, string $field = 'default', $group_name = null, $logical_operator = 'AND') : VespaYQLBuilder
+    public function addCondition(string $term, string $field = 'default', $group_name = null, $logical_operator = 'AND', $operator = 'CONTAINS') : VespaYQLBuilder
     {
         $term = Utils::removeQuotes($term);
-        return $this->createGroupCondition($field, "CONTAINS", "'$term'", $logical_operator, $group_name);
+        $allowed_operators = ['CONTAINS', 'MATCHES'];
+
+        return $this->createGroupCondition($field, $operator, "'$term'", $logical_operator, $group_name);
     }
 
     public function addField(string $field) : VespaYQLBuilder
@@ -331,12 +333,25 @@ class VespaYQLBuilder
                             $condition = $this->formatWeakAndCondition($search_condition["condition"]);
                             break;
                         default:
-                            $condition = "{$search_condition["condition"][0]} {$search_condition["condition"][2]} ({$search_condition["condition"][1]} {$search_condition["condition"][3]})";
+                            $condition = "({$search_condition["condition"][0]} {$search_condition["condition"][2]} ({$search_condition["condition"][1]} {$search_condition["condition"][3]}))";
                     }
                 }
-                if($has_condition) $yql .= " {$search_condition["logical_operator"]} ";
-                else $has_condition = true;
-                if($index == 0) $yql .=  "(" ;
+                if($has_condition)
+                {
+                    $yql .= " {$search_condition["logical_operator"]} ";
+                }
+                else
+                {
+                    if($search_condition["logical_operator"] == "AND!")
+                    {
+                        $yql .= " ! ";
+                    }
+                    $has_condition = true;
+                }
+                if($index == 0)
+                {
+                    $yql .=  "(" ;
+                }
                 $yql .= " {$condition} ";
                 $index++;
             }
@@ -397,6 +412,10 @@ class VespaYQLBuilder
 
     private function addSearchConditionGroup($logical_operator, $condition, $group_name = null)
     {
+        if($logical_operator == "NOT")
+        {
+            $logical_operator = "AND!";
+        }
         $group_name = $this->validateGroupName($group_name);
         $this->search_condition_groups[$group_name][] = ['logical_operator' => $logical_operator, 'condition' => $condition];
         return $this;
@@ -513,7 +532,10 @@ class VespaYQLBuilder
         {
             throw new VespaInvalidYQLQueryException("There must be at least one token to be searched.");
         }
-
+        if($logical_operator == "NOT")
+        {
+            $logical_operator = "AND!";
+        }
         $allowed_logical_operators = ["AND", "OR", "AND!"];
         if(!in_array(str_replace(" ", "", strtoupper($logical_operator)), $allowed_logical_operators))
         {

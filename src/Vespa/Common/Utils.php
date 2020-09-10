@@ -59,6 +59,29 @@ class Utils
         $text = str_replace("°", "", $text);
         $text = str_replace("ª", "", $text);
         $text = str_replace("º", "", $text);
-        return preg_replace('/[#$%^&*()+=\-\[\]\';,.\/{}|":<>?~\\\\]/', '${1} ', $text);
+        return preg_replace('/[#$%^&*@()+=\-\[\]\';,.\/{}|":<>?~\\\\]/', '${1} ', $text);
+    }
+
+    /**
+     * Use it for json_encode some corrupt UTF-8 chars
+     * useful for = malformed utf-8 characters possibly incorrectly encoded by json_encode
+     * @param $mixed
+     * @return array|bool|false|string|string[]|null
+     */
+    public static function utf8ize($mixed)
+    {
+        if(is_array($mixed))
+        {
+            foreach ($mixed as $key => $value)
+            {
+                $mixed[$key] = Utils::utf8ize($value);
+            }
+        }
+        elseif(is_string($mixed))
+        {
+            return mb_convert_encoding($mixed, "UTF-8", "UTF-8");
+        }
+
+        return $mixed;
     }
 }

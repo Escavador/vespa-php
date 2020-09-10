@@ -62,7 +62,7 @@ class FeedDocumentJob implements ShouldQueue
             if(count($documents) == 0)
             {
                 $this->logger->log("[$this->model]: No documents to be indexed were returned", "info");
-                throw new VespaFeedException($this->model, "It was not possible to index any document to the Vespa.");
+                throw new VespaFeedException($this->model, null, "It was not possible to index any document to the Vespa.");
             }
 
             //Records on vespa
@@ -90,20 +90,20 @@ class FeedDocumentJob implements ShouldQueue
             $documents_chunk = array_chunk(collect($indexed)->pluck('id')->unique()->all(), $this->update_chunk_size);
             foreach ($documents_chunk as $chunk)
             {
-                $model_class::markAsVespaIndexed($chunk);
+                $this->model_class::markAsVespaIndexed($chunk);
             }
             $documents_chunk = array_chunk(collect($not_indexed)->pluck('id')->unique()->all(), $this->update_chunk_size);
             foreach ($documents_chunk as $chunk)
             {
-                $model_class::markAsVespaNotIndexed($chunk);
+                $this->model_class::markAsVespaNotIndexed($chunk);
             }
         }
         catch (\Exception $ex)
         {
-            $documents_chunk = array_chunk(collect($not_indexed)->pluck('id')->unique()->all(), $this->update_chunk_size);
+            $documents_chunk = array_chunk(collect($documents)->pluck('id')->unique()->all(), $this->update_chunk_size);
             foreach ($documents_chunk as $chunk)
             {
-                $model_class::markAsVespaNotIndexed($chunk);
+                $this->model_class::markAsVespaNotIndexed($chunk);
             }
             $e = new VespaFeedException($this->model, $ex);
             VespaExceptionSubject::notifyObservers($e);

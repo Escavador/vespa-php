@@ -30,10 +30,14 @@ return array(
             'feed' => 500,
             'update' => 1000
         ],
-        'set_language' => 'en-US'
+        'set_language' => 'en-US',
+        'tags' => [
+            'open' => '<hi>',
+            'close' => '</hi>'
+        ]
     ),
 
-	'namespace' => [
+    'namespace' => [
         'foo' => [
             'document' => [
                 [
@@ -49,8 +53,6 @@ return array(
         'channel' => 'vespa'
     ],
     'observers' => [
-        'exceptions' => [
-
-        ]
+        'exceptions' => []
     ]
 );

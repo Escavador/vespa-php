@@ -1,4 +1,5 @@
 <?php
+
 namespace Escavador\Vespa\Exception;
 
 class VespaInvalidHostException extends VespaException

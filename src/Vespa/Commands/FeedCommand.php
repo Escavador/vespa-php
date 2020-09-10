@@ -79,76 +79,64 @@ class FeedCommand extends Command
         $time_out = $this->option('time-out');
         $queue = $this->option('queue');
 
-        if (!is_array($models))
-        {
+        if (!is_array($models)) {
             $this->message('error', 'The [model] argument has to be an array.');
             exit(1);
         }
-        if (!$models && !$all)
-        {
+        if (!$models && !$all) {
             $this->message('error', 'At least one [model] is required to feed Vespa. If you want feed Vespa with all models, use the argument [all].');
             exit(1);
         }
 
-        if ($models && $all)
-        {
+        if ($models && $all) {
             $this->message('error', 'Only one argument ([all] or [model]) can be used at a time.');
             exit(1);
         }
 
         //Get all mapped models
-        if (!$models && $all)
-        {
+        if (!$models && $all) {
             $models = DocumentDefinition::findAllTypes($this->document_definitions);
         }
 
-        if (!is_numeric($limit))
-        {
-            $this->message('error', '['.implode(',', $models) . ']: The [limit] argument has to be a number.');
+        if (!is_numeric($limit)) {
+            $this->message('error', '[' . implode(',', $models) . ']: The [limit] argument has to be a number.');
             exit(1);
         }
 
-        if (!is_numeric($bulk))
-        {
-            $this->message('error', '['.implode(',', $models) . ']: The [bulk] argument has to be a number.');
+        if (!is_numeric($bulk)) {
+            $this->message('error', '[' . implode(',', $models) . ']: The [bulk] argument has to be a number.');
             exit(1);
         }
 
-        if ($limit <= 0)
-        {
-            $this->message('error', '['.implode(',', $models) . ']: The [limit] argument has to be greater than 0.');
+        if ($limit <= 0) {
+            $this->message('error', '[' . implode(',', $models) . ']: The [limit] argument has to be greater than 0.');
             exit(1);
         }
 
-        if ($bulk <= 0)
-        {
-            $this->message('error', '['.implode(',', $models) . ']: The [bulk] argument has to be greater than 0.');
+        if ($bulk <= 0) {
+            $this->message('error', '[' . implode(',', $models) . ']: The [bulk] argument has to be greater than 0.');
             exit(1);
         }
 
-        if ($bulk > $limit)
-        {
-            $this->message('warn', '['.implode(',', $models) . ']: The [bulk] argument can not to be greater than [limit] argument. We lets ignore [bulk] argument.');
+        if ($bulk > $limit) {
+            $this->message('warn', '[' . implode(',', $models) . ']: The [bulk] argument can not to be greater than [limit] argument. We lets ignore [bulk] argument.');
             $bulk = $limit;
         }
 
-        if ($queue && !$async)
-        {
-            $this->message('warn', '['.implode(',', $models) . ']: The [queue] argument only taken into account if the feed is async.');
+        if ($queue && !$async) {
+            $this->message('warn', '[' . implode(',', $models) . ']: The [queue] argument only taken into account if the feed is async.');
         }
 
         $this->limit = intval($limit);
         $this->bulk = intval($bulk);
 
-        if ($time_out !== null && !is_numeric($time_out))
-        {
-            $this->message('error', '['.implode(',', $models) . ']: The [time-out] argument has to be a number.');
+        if ($time_out !== null && !is_numeric($time_out)) {
+            $this->message('error', '[' . implode(',', $models) . ']: The [time-out] argument has to be a number.');
             exit(1);
         }
 
-        if ($time_out !== null && !is_numeric($time_out <= 0))
-        {
-            $this->message('error', '['.implode(',', $models) . ']: The [time-out] argument has to be a number.');
+        if ($time_out !== null && !is_numeric($time_out <= 0)) {
+            $this->message('error', '[' . implode(',', $models) . ']: The [time-out] argument has to be a number.');
             exit(1);
         }
 
@@ -156,10 +144,8 @@ class FeedCommand extends Command
         set_time_limit($time_out ?: 0);
         $was_fed = false;
 
-        foreach ($models as $model)
-        {
-            if (!($model_definition = DocumentDefinition::findDefinition($model, null, $this->document_definitions)))
-            {
+        foreach ($models as $model) {
+            if (!($model_definition = DocumentDefinition::findDefinition($model, null, $this->document_definitions))) {
                 $this->message('error', "[$model]: The model is not mapped at Vespa config file.");
                 //go to next model
                 continue;
@@ -167,14 +153,12 @@ class FeedCommand extends Command
 
             $table_name = $model_definition->getModelTable();
 
-            if (!Schema::hasColumn($table_name, $this->vespa_status_column))
-            {
+            if (!Schema::hasColumn($table_name, $this->vespa_status_column)) {
                 $this->message('error', "[$model]: Table [$table_name] does not have the column [$this->vespa_status_column].");
                 exit(1);
             }
 
-            if (!Schema::hasColumn($table_name, $this->vespa_date_column))
-            {
+            if (!Schema::hasColumn($table_name, $this->vespa_date_column)) {
                 $this->message('error', "[$model]: Table [$table_name] does not have the column [$this->vespa_date_column].");
                 exit(1);
             }
@@ -183,18 +167,12 @@ class FeedCommand extends Command
             $model_class = $model_definition->getModelClass();
             $model = $model_definition->getDocumentType();
 
-            if($async)
-            {
+            if ($async) {
                 $this->processAsync($model_definition, $model_class, $model, $queue);
-            }
-            else
-            {
-                try
-                {
+            } else {
+                try {
                     $was_fed = $this->processNow($model_definition, $model_class, $model);
-                }
-                catch (\Exception $ex)
-                {
+                } catch (\Exception $ex) {
                     $e = new VespaFeedException($model, $ex);
                     VespaExceptionSubject::notifyObservers($e);
                     $this->message('error', $e->getMessage());
@@ -203,10 +181,9 @@ class FeedCommand extends Command
             }
         }
 
-        if($was_fed)
-        {
+        if ($was_fed) {
             $total_duration = Carbon::now()->diffInSeconds($start_time);
-            $this->message('info', '['.implode(',', $models) . ']: Vespa was fed in '. gmdate('H:i:s:m', $total_duration));
+            $this->message('info', '[' . implode(',', $models) . ']: Vespa was fed in ' . gmdate('H:i:s:m', $total_duration));
         }
     }
 
@@ -227,7 +204,7 @@ class FeedCommand extends Command
      */
     protected function getOptions()
     {
-        return array (
+        return array(
             array('model', 'M', InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'Which models to include', array()),
             array('limit', 'L', InputOption::VALUE_OPTIONAL, 'Limit of model to feed Vespa', $this->getLimitDefault()),
             array('time-out', 'T', InputOption::VALUE_OPTIONAL, 'Defines the execution timeout', $this->time_out), //TODO testing this
@@ -243,10 +220,8 @@ class FeedCommand extends Command
 
     protected function message($type = 'debug', $text)
     {
-        if (!app()->environment('production'))
-        {
-            switch ($type)
-            {
+        if (!app()->environment('production')) {
+            switch ($type) {
                 case 'error':
                     $this->error($text);
                     break;
@@ -269,15 +244,11 @@ class FeedCommand extends Command
     {
         $items = $this->limit;
         $total_indexed = 0;
-        while($items > 0)
-        {
-            if($items >= $this->bulk)
-            {
+        while ($items > 0) {
+            if ($items >= $this->bulk) {
                 $items -= $this->bulk;
                 $requested_documents = $this->bulk;
-            }
-            else
-            {
+            } else {
                 $requested_documents = $items;
                 $items = 0;
             }
@@ -285,8 +256,7 @@ class FeedCommand extends Command
             $documents = $model_class::getVespaDocumentsToIndex($requested_documents);
             $count_docs = count($documents);
 
-            if ($documents !== null && $count_docs <= 0)
-            {
+            if ($documents !== null && $count_docs <= 0) {
                 $this->message('info', "[$model] already up-to-date.");
                 return false;
             }
@@ -295,14 +265,10 @@ class FeedCommand extends Command
             $result = $this->vespa_client->sendDocuments($model_definition, $documents);
             $indexed = [];
             $not_indexed = [];
-            foreach ($documents as $document)
-            {
-                if(in_array($document, $result))
-                {
+            foreach ($documents as $document) {
+                if (in_array($document, $result)) {
                     $indexed[] = $document;
-                }
-                else
-                {
+                } else {
                     $not_indexed[] = $document;
                 }
             }
@@ -312,16 +278,14 @@ class FeedCommand extends Command
 
             //Update model's vespa info in database
             $documents_chunk = array_chunk(collect($indexed)->pluck('id')->unique()->all(), $this->update_chunk_size);
-            foreach ($documents_chunk as $chunk)
-            {
+            foreach ($documents_chunk as $chunk) {
                 $model_class::markAsVespaIndexed($chunk);
             }
             $documents_chunk = array_chunk(collect($not_indexed)->pluck('id')->unique()->all(), $this->update_chunk_size);
-            foreach ($documents_chunk as $chunk)
-            {
+            foreach ($documents_chunk as $chunk) {
                 $model_class::markAsVespaNotIndexed($chunk);
             }
-            $this->message('debug', "[$model]:". $count_indexed . " of " . $count_docs . " were indexed in Vespa.");
+            $this->message('debug', "[$model]:" . $count_indexed . " of " . $count_docs . " were indexed in Vespa.");
         }
 
         $this->message('info', "[$model]: $total_indexed/$this->limit was done.");
@@ -334,15 +298,11 @@ class FeedCommand extends Command
         $items = $this->limit;
         $total_scheduled = 0;
         $total_documents = 0;
-        while($items > 0)
-        {
-            if($items >= $this->bulk)
-            {
+        while ($items > 0) {
+            if ($items >= $this->bulk) {
                 $items -= $this->bulk;
                 $requested_documents = $this->bulk;
-            }
-            else
-            {
+            } else {
                 $requested_documents = $items;
                 $items = 0;
             }
@@ -350,27 +310,21 @@ class FeedCommand extends Command
             $document_ids = $model_class::getVespaDocumentIdsToIndex($requested_documents);
             $count_docs = count($document_ids);
 
-            if ($document_ids !== null && $count_docs <= 0)
-            {
+            if ($document_ids !== null && $count_docs <= 0) {
                 $this->message('info', "[$model] already up-to-date.");
                 break;
             }
 
             // Create FeedJob
-            try
-            {
+            try {
                 $documents_chunk = array_chunk($document_ids, $this->update_chunk_size);
-                foreach ($documents_chunk as $chunk)
-                {
+                foreach ($documents_chunk as $chunk) {
                     $model_class::markAsVespaIndexed($chunk);
                 }
                 FeedDocumentJob::dispatch($model_definition, $model_class, $model, $document_ids, $queue);
-            }
-            catch (\Exception $ex)
-            {
+            } catch (\Exception $ex) {
                 $documents_chunk = array_chunk($document_ids, $this->update_chunk_size);
-                foreach ($documents_chunk as $chunk)
-                {
+                foreach ($documents_chunk as $chunk) {
                     $model_class::markAsVespaNotIndexed($chunk);
                 }
                 $e = new VespaFeedException($model, $ex, "Failed to create job FeedDocumentJob.");

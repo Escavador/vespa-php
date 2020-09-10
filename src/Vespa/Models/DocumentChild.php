@@ -13,6 +13,7 @@ class DocumentChild extends AbstractChild
     protected $document_definition;
     protected $document;
     protected $fields;
+    protected $hits;
 
     public function __construct(object $child, $only_raw = false)
     {
@@ -23,6 +24,21 @@ class DocumentChild extends AbstractChild
     public function document() : AbstractDocument
     {
         return $this->document;
+    }
+
+    public final function hits() : array
+    {
+        if (!$this->hits)
+        {
+            $open_tag = config('vespa.default.tags.open', '<hi>');
+            $close_tag = config('vespa.default.tags.close', '</hi>');
+            $source = json_encode(json_decode($this->raw()), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            preg_match_all("|(?<=$open_tag).*(?=$close_tag)|U", $source, $out, PREG_PATTERN_ORDER);
+            $out = $out[0];
+            $this->hits = array_intersect_key($out, array_unique(array_map('strtolower', $out)));
+        }
+
+        return $this->hits;
     }
 
     public function documentDefinition() : DocumentDefinition

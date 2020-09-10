@@ -1,4 +1,5 @@
 <?php
+
 namespace Escavador\Vespa\Exception;
 
 use Escavador\Vespa\Interfaces\AbstractDocument;
