@@ -54,12 +54,9 @@ class Utils
         return trim(preg_replace("/\s+/", '${1} ', $text));
     }
 
-    public static function removeSpecialCharacters(string $text) : string
+    public static function removeSpecialCharacters(string $text, $replacement = '') : string
     {
-        $text = str_replace("°", "", $text);
-        $text = str_replace("ª", "", $text);
-        $text = str_replace("º", "", $text);
-        return preg_replace('/[#$%^&*@()+=\-\[\]\';,.\/{}|":<>?~\\\\]/', '${1} ', $text);
+        return trim(preg_replace('/[\x00-\x1F\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\xBF\xC5\xC6\xD0\xD7\xD8\xDE\xDF\xE5\xE6\xF0\xF7\xF8\x{00FE}-\x{FFFF}]/u', $replacement, $text));
     }
 
     /**

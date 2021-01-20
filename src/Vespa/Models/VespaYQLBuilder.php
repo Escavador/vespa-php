@@ -35,6 +35,11 @@ class VespaYQLBuilder
         return $this;
     }
 
+    public final function hasWhereConditions() : string
+    {
+        return !empty($this->search_condition_groups);
+    }
+
     public function addStemmingCondition(string $term, bool $stemming = false, string $field = 'default', $operator = 'CONTAINS', $logical_operator = 'AND', $group_name = null) : VespaYQLBuilder
     {
         $term = Utils::removeQuotes($term);
@@ -55,7 +60,6 @@ class VespaYQLBuilder
 
     public function addWandCondition(string $term, string $field = 'default', $logical_operator = 'AND', $group_name = null, int $target_num_hits = null, float $score_threshold = null, \Closure $weight_tokens = null) : VespaYQLBuilder
     {
-        $tokens = $this->splitTerm($term);
         [$tokens, $not_tokens] = $this->tokenizeTerm($term, true);
         $tokens = $this->generateWeightedTokens($tokens);
         if($weight_tokens != null)

@@ -15,10 +15,12 @@ class VespaQuery
         $this->parent_client = $client;
     }
 
-    public final function get() : VespaResult
+    public final function get(bool $reset = true) : VespaResult
     {
         $payload = $this->toArray();
-        $this->reset();
+        if ($reset) {
+            $this->reset();
+        }
         return $this->parent_client->search($payload);
     }
 
