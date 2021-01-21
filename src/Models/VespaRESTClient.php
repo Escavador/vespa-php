@@ -6,7 +6,7 @@ namespace Escavador\Vespa\Models;
 use Escavador\Vespa\Common\LogManager;
 use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Common\VespaExceptionSubject;
-use Escavador\Vespa\Enums\LogManagerOptionsEnum;
+use Escavador\Vespa\Enum\LogManagerOptionsEnum;
 use Escavador\Vespa\Exception\VespaFailDeleteDocumentException;
 use Escavador\Vespa\Exception\VespaFailGetDocumentException;
 use Escavador\Vespa\Exception\VespaFailSearchException;

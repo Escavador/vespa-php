@@ -1,6 +1,6 @@
 <?php
 
-use Escavador\Vespa\Enums\ModelStatusVespaEnum;
+use Escavador\Vespa\Enum\ModelStatusVespaEnum;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;

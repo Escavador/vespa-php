@@ -2,7 +2,7 @@
 
 namespace Escavador\Vespa\Common;
 
-use Escavador\Vespa\Enums\LogManagerOptionsEnum;
+use Escavador\Vespa\Enum\LogManagerOptionsEnum;
 use Illuminate\Support\Facades\Log;
 
 class LogManager

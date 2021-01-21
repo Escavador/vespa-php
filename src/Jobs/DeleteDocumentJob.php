@@ -6,7 +6,7 @@ use Carbon\Carbon;
 use Escavador\Vespa\Common\LogManager;
 use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Common\VespaExceptionSubject;
-use Escavador\Vespa\Enums\LogManagerOptionsEnum;
+use Escavador\Vespa\Enum\LogManagerOptionsEnum;
 use Escavador\Vespa\Exception\VespaExecuteJobException;
 use Escavador\Vespa\Exception\VespaFailDeleteDocumentException;
 use Escavador\Vespa\Models\DocumentDefinition;
