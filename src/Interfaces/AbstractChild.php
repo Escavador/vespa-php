@@ -1,6 +1,6 @@
 <?php
 
-namespace Escavador\Vespa\Models;
+namespace Escavador\Vespa\Interfaces;
 
 use Escavador\Vespa\Common\ExceptionObserverManager;
 use Escavador\Vespa\Exception\VespaException;
