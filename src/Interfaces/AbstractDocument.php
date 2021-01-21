@@ -2,7 +2,7 @@
 
 namespace Escavador\Vespa\Interfaces;
 
-use Escavador\Vespa\Models\AbstractChild;
+use Escavador\Vespa\Interfaces\AbstractChild;
 
 interface AbstractDocument
 {
@@ -11,11 +11,11 @@ interface AbstractDocument
      *
      * @return string
      */
-    public function getVespaDocumentId() : string;
-	public function getVespaDocumentFields();
+    public function getVespaDocumentId(): string;
+    public function getVespaDocumentFields();
     public static function markAsVespaIndexed(array $document_ids);
     public static function markAsVespaNotIndexed(array $document_ids);
-    public static function instanceByVespaChildResponse(AbstractChild $child) : AbstractDocument;
+    public static function instanceByVespaChildResponse(AbstractChild $child): AbstractDocument;
     public static function getVespaDocumentsToIndex(int $limit, array $document_ids = null);
     public static function getVespaDocumentIdsToIndex(int $limit);
 }
