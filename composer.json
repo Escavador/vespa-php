@@ -1,48 +1,50 @@
 {
-    "name": "escavador/vespa-php",
-    "description": "PHP Client for Vespa",
-    "keywords": ["laravel", "client", "vespa", "search", "engine", "bigdata"],
-    "license": "GPL-3.0",
-    "type": "library",
-    "authors": [
-        {
-            "name": "Ícaro Jerry",
-            "email": "icarojerry@potelo.com.br"
-        }
-    ],
-    "support": {
-        "issues": "https://github.com/escavador/vespa-php/issues"
-    },
-    "require": {
-        "php": "^7.1",
-        "ext-json": ">=1.3.7",
-        "guzzlehttp/ringphp": "~1.0",
-        "guzzlehttp/guzzle": "~6.0",
-        "monolog/monolog": "^1.12"
-    },
-    "require-dev": {
-        "phpunit/phpunit": "^7.5"
-    },
-    "autoload": {
-        "psr-4": {
-            "Escavador\\Vespa\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Escavador\\Vespa\\Tests\\": "tests/"
-        }
-    },
-    "extra": {
-        "laravel": {
-            "providers": [
-                "Escavador\\Vespa\\VespaServiceProvider"
-            ]
-        }
-    },
-    "config": {
-        "sort-packages": true
-    },
-    "prefer-stable": true,
-    "minimum-stability": "dev"
+  "name": "escavador/vespa-php",
+  "description": "PHP Client for Vespa",
+  "keywords": [
+    "laravel",
+    "client",
+    "vespa",
+    "search",
+    "engine",
+    "bigdata"
+  ],
+  "license": "GPL-3.0",
+  "type": "library",
+  "authors": [
+    {
+      "name": "Ícaro Jerry",
+      "email": "icarojerry@potelo.com.br"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/escavador/vespa-php/issues"
+  },
+  "require": {
+    "php": "^7.1",
+    "ext-json": ">=1.3.7",
+    "guzzlehttp/ringphp": "~1.0",
+    "guzzlehttp/guzzle": "~6.0",
+    "monolog/monolog": "^1.12"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^7.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "Escavador\\Vespa\\": "src/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Escavador\\Vespa\\VespaServiceProvider"
+      ]
+    }
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "prefer-stable": true,
+  "minimum-stability": "dev"
 }
