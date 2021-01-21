@@ -2,6 +2,7 @@
 
 namespace Escavador\Vespa\Models;
 
+use Escavador\Vespa\Interfaces\AbstractChild;
 
 class GroupChild extends AbstractChild
 {

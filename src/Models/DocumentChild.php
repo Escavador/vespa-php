@@ -4,6 +4,7 @@ namespace Escavador\Vespa\Models;
 
 use Escavador\Vespa\Common\VespaExceptionSubject;
 use Escavador\Vespa\Exception\VespaException;
+use Escavador\Vespa\Interfaces\AbstractChild;
 use Escavador\Vespa\Interfaces\AbstractDocument;
 
 
