@@ -3,10 +3,21 @@
 namespace Escavador\Vespa\Migrations;
 
 use Illuminate\Database\Migrations\MigrationCreator as IlluminateMigrationCreator;
-
+use Illuminate\Filesystem\Filesystem;
 
 class MigrationCreator extends  IlluminateMigrationCreator
 {
+    /**
+     * Create a new migration creator instance.
+     *
+     * @param  \Illuminate\Filesystem\Filesystem  $files
+     * @param  string  $customStubPath
+     * @return void
+     */
+    public function __construct(Filesystem $files, $customStubPath = null)
+    {
+        parent::__construct($files, $customStubPath);
+    }
 
     /**
      * Get the migration stub file.
