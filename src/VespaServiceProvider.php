@@ -54,7 +54,7 @@ class VespaServiceProvider extends ServiceProvider
     protected function registerCreator()
     {
         $this->app->singleton('vespa.migration.creator', function ($app) {
-            return new MigrationCreator($app['files']);
+            return new MigrationCreator($app['files'], null);
         });
     }
 
