@@ -373,28 +373,28 @@ class VespaQuery
 
     private function rankingProperties($key, $value)
     {
-        $this->ranking('properties',  [$key => $value]);
+        $this->ranking('properties', [$key => $value]);
 
         return $this;
     }
 
     private function rankingMatchPhase($key, $value)
     {
-        $this->ranking('matchPhase',  [$key => $value]);
+        $this->ranking('matchPhase', [$key => $value]);
 
         return $this;
     }
 
     private function rankingMatchPhaseDiversity($key, $value)
     {
-        $this->rankingMatchPhase('diversity',  [$key => $value]);
+        $this->rankingMatchPhase('diversity', [$key => $value]);
 
         return $this;
     }
 
     private function rankingFeatures($key, $value)
     {
-        $this->ranking('features',  [$key => $value]);
+        $this->ranking('features', [$key => $value]);
 
         return $this;
     }

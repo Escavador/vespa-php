@@ -8,8 +8,8 @@
     <exclude-pattern>config</exclude-pattern>
 
     <rule ref="PSR2">
-        <exclude name="Generic.Files.LineEndings.InvalidEOLChar" />
-        <exclude name="Generic.Files.LineLength.TooLong" />
+        <exclude name="Generic.Files.LineEndings.InvalidEOLChar"/>
+        <exclude name="Generic.Files.LineLength.TooLong"/>
     </rule>
 
     <rule ref="Glen84.NamingConventions.ValidVariableName.NotCamelCaps"/>

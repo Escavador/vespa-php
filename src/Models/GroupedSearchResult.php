@@ -21,7 +21,7 @@ class GroupedSearchResult extends VespaResult
             return;
 
         try {
-            $result = (object) json_decode($result);
+            $result = (object)json_decode($result);
             $this->id = $result->root->id;
             $this->relevance = $result->root->relevance;
             $this->coverage = $result->root->coverage;

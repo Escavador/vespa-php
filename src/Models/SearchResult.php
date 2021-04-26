@@ -20,7 +20,7 @@ class SearchResult extends VespaResult
             return;
 
         try {
-            $result = (object) json_decode($result);
+            $result = (object)json_decode($result);
             $this->id = $result->root->id;
             $this->relevance = $result->root->relevance;
             $this->coverage = $result->root->coverage;
@@ -43,7 +43,7 @@ class SearchResult extends VespaResult
         $children_processed = [];
 
         foreach ($children as $child) {
-            $children_processed[] = new DocumentChild((object) $child, $this->only_raw, $child);
+            $children_processed[] = new DocumentChild((object)$child, $this->only_raw, $child);
         }
 
         return $children_processed;

@@ -2,10 +2,10 @@
 
 namespace Escavador\Vespa;
 
-use Illuminate\Support\ServiceProvider;
 use Escavador\Vespa\Commands\FeedCommand;
 use Escavador\Vespa\Commands\MigrateMakeCommand;
 use Escavador\Vespa\Migrations\MigrationCreator;
+use Illuminate\Support\ServiceProvider;
 
 class VespaServiceProvider extends ServiceProvider
 {

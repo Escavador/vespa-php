@@ -3,17 +3,21 @@
 namespace Escavador\Vespa\Interfaces;
 
 use Escavador\Vespa\Common\Utils;
-use Escavador\Vespa\Interfaces\AbstractDocument;
 use Escavador\Vespa\Models\DocumentDefinition;
 
 abstract class AbstractClient
 {
     //abstract public function documentIsRegistred(DocumentDefinition $definition) : bool;
     abstract public function search(array $data): VespaResult;
+
     abstract public function sendDocuments(DocumentDefinition $definition, $documents);
+
     abstract public function sendDocument(DocumentDefinition $definition, AbstractDocument $document);
+
     abstract public function updateDocument(DocumentDefinition $definition, AbstractDocument $document);
+
     abstract public function removeDocument(string $scheme);
+
     abstract public function getDocument(string $scheme): VespaResult;
 
     protected $host;

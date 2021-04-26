@@ -7,7 +7,7 @@ use Escavador\Vespa\Exception\VespaException;
 use Escavador\Vespa\Interfaces\AbstractDocument;
 use Escavador\Vespa\Interfaces\VespaResult;
 
-class DocumentResult  extends VespaResult
+class DocumentResult extends VespaResult
 {
     protected $pathId;
     protected $document;
@@ -21,7 +21,7 @@ class DocumentResult  extends VespaResult
         }
 
         try {
-            $this->parseDocument((object) $this->json());
+            $this->parseDocument((object)$this->json());
             $this->only_raw = false;
         } catch (\Exception $ex) { //TOOD Custom Exception
             $this->only_raw = true;

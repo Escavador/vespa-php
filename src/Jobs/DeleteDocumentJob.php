@@ -11,10 +11,10 @@ use Escavador\Vespa\Exception\VespaExecuteJobException;
 use Escavador\Vespa\Exception\VespaFailDeleteDocumentException;
 use Escavador\Vespa\Models\DocumentDefinition;
 use Illuminate\Bus\Queueable;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 
 class DeleteDocumentJob implements ShouldQueue
 {
@@ -39,7 +39,7 @@ class DeleteDocumentJob implements ShouldQueue
         $this->update_model_database = $update_model_database;
 
         $this->document_ids = $document_ids;
-        $this->update_chunk_size =  intval(config('vespa.default.max_parallel_requests.update', 1000));
+        $this->update_chunk_size = intval(config('vespa.default.max_parallel_requests.update', 1000));
 
         if ($queue == null) {
             $queue = config('vespa.default.queue', 'vespa');
@@ -54,7 +54,7 @@ class DeleteDocumentJob implements ShouldQueue
 
         try {
             $start_time = Carbon::now();
-            $this->logger =  new LogManager();
+            $this->logger = new LogManager();
             $this->vespa_client = Utils::defaultVespaClient();
 
             if (count($this->document_ids) == 0) {

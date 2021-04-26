@@ -11,10 +11,10 @@ use Escavador\Vespa\Exception\VespaFeedException;
 use Escavador\Vespa\Interfaces\AbstractClient;
 use Escavador\Vespa\Models\DocumentDefinition;
 use Illuminate\Bus\Queueable;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 
 
 class UpdateDocumentJob implements ShouldQueue
@@ -41,7 +41,7 @@ class UpdateDocumentJob implements ShouldQueue
 
         $this->documents = $document_ids;
         $this->vespa_client = $client ?: Utils::defaultVespaClient();
-        $this->update_chunk_size =  intval(config('vespa.default.max_parallel_requests.update', 1000));
+        $this->update_chunk_size = intval(config('vespa.default.max_parallel_requests.update', 1000));
 
         if ($queue == null) {
             $queue = config('vespa.default.queue', 'vespa');
@@ -53,7 +53,7 @@ class UpdateDocumentJob implements ShouldQueue
     {
         try {
             $start_time = Carbon::now();
-            $this->logger =  new LogManager();
+            $this->logger = new LogManager();
 
             if (count($this->documents) == 0) {
                 $message = "[$this->model]: No documents to be processed";

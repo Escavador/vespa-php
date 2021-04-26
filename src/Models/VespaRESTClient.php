@@ -42,7 +42,7 @@ class VespaRESTClient extends AbstractClient
         $this->client = new Client();
         $this->max_concurrency = config('vespa.default.vespa_rest_client.max_concurrency', 6);
         $this->max_parallel_requests = intval(config('vespa.default.max_parallel_requests.feed', 1000));
-        $this->logger =  new LogManager();
+        $this->logger = new LogManager();
 
         if ($headers) {
             $this->headers = $headers;
@@ -113,7 +113,7 @@ class VespaRESTClient extends AbstractClient
     {
         $url = $this->host . "/document/v1/{$definition->getDocumentNamespace()}/{$definition->getDocumentType()}/docid/{$document->getVespaDocumentId()}";
         try {
-            $response = $this->client->put($url,  [
+            $response = $this->client->put($url, [
                 'headers' => $this->headers,
                 RequestOptions::JSON => array('fields' => $document->getVespaDocumentFields())
             ]);
@@ -169,7 +169,7 @@ class VespaRESTClient extends AbstractClient
     {
         $url = $this->host . "/document/v1/{$definition->getDocumentNamespace()}/{$definition->getDocumentType()}/docid/{$document->getVespaDocumentId()}";
         try {
-            $response = $this->client->post($url,  [
+            $response = $this->client->post($url, [
                 'headers' => $this->headers,
                 RequestOptions::JSON => array('fields' => $document->getVespaDocumentFields())
             ]);
@@ -191,7 +191,7 @@ class VespaRESTClient extends AbstractClient
     {
         $indexed = array();
         $document_type = $definition->getDocumentType();
-        $document_namespace =  $definition->getDocumentNamespace();
+        $document_namespace = $definition->getDocumentNamespace();
 
         $requests = function ($documents, $definition) use (&$document_type, &$document_namespace) {
             foreach ($documents as $document) {

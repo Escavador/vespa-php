@@ -46,11 +46,11 @@ class FeedCommand extends Command
         parent::__construct();
         $this->vespa_status_column = config('vespa.model_columns.status', 'vespa_status');
         $this->vespa_date_column = config('vespa.model_columns.date', 'vespa_last_indexed_date');
-        $this->update_chunk_size =  intval(config('vespa.default.max_parallel_requests.update', 1000));
+        $this->update_chunk_size = intval(config('vespa.default.max_parallel_requests.update', 1000));
         $this->document_definitions = DocumentDefinition::loadDefinition();
         $this->vespa_client = Utils::defaultVespaClient();
 
-        $this->logger =  new LogManager();
+        $this->logger = new LogManager();
     }
 
     /**

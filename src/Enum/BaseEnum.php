@@ -16,7 +16,7 @@ abstract class BaseEnum
     {
         $name = static::getConstantName($value);
         $value = static::getConstantValue($name);
-        return (object) [
+        return (object)[
             'name' => $name,
             'value' => $value
         ];

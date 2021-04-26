@@ -6,17 +6,16 @@ use Carbon\Carbon;
 use Escavador\Vespa\Common\LogManager;
 use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Common\VespaExceptionSubject;
-use Escavador\Vespa\Exception\VespaException;
 use Escavador\Vespa\Exception\VespaFeedException;
 use Escavador\Vespa\Models\DocumentDefinition;
 use GuzzleHttp\Client;
 use Illuminate\Bus\Queueable;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Support\Facades\Redis;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 
 class FeedDocumentJob implements ShouldQueue
 {
@@ -36,10 +35,9 @@ class FeedDocumentJob implements ShouldQueue
         $this->model_class = $model_class;
         $this->model = $model;
         $this->document_ids = $document_ids;
-        $this->update_chunk_size =  intval(config('vespa.default.max_parallel_requests.update', 1000));
+        $this->update_chunk_size = intval(config('vespa.default.max_parallel_requests.update', 1000));
 
-        if($queue == null)
-        {
+        if ($queue == null) {
             $queue = config('vespa.default.queue', 'vespa');
         }
         $this->onQueue($queue);
@@ -53,14 +51,12 @@ class FeedDocumentJob implements ShouldQueue
     public function handle()
     {
         $start_time = Carbon::now();
-        $this->logger =  new LogManager();
+        $this->logger = new LogManager();
         $this->vespa_client = Utils::defaultVespaClient();
         $documents = $this->model_class::getVespaDocumentsToIndex(count($this->document_ids), $this->document_ids);
 
-        try
-        {
-            if(count($documents) == 0)
-            {
+        try {
+            if (count($documents) == 0) {
                 $this->logger->log("[$this->model]: No documents to be indexed were returned", "info");
                 throw new VespaFeedException($this->model, null, "It was not possible to index any document to the Vespa.");
             }
@@ -69,43 +65,32 @@ class FeedDocumentJob implements ShouldQueue
             $result = $this->vespa_client->sendDocuments($this->model_definition, $documents);
             $indexed = [];
             $not_indexed = [];
-            foreach ($documents as $document)
-            {
-                if(in_array($document, $result))
-                {
+            foreach ($documents as $document) {
+                if (in_array($document, $result)) {
                     $indexed[] = $document;
-                }
-                else
-                {
+                } else {
                     $not_indexed[] = $document;
                 }
             }
 
             $count_indexed = count($indexed);
-            if($count_indexed == 0)
-            {
-                throw new VespaFeedException($this->model,  null, "It was not possible to index any document to the Vespa.");
+            if ($count_indexed == 0) {
+                throw new VespaFeedException($this->model, null, "It was not possible to index any document to the Vespa.");
             }
             // Update model's vespa info in database
             $documents_chunk = array_chunk(collect($indexed)->pluck('id')->unique()->all(), $this->update_chunk_size);
-            foreach ($documents_chunk as $chunk)
-            {
+            foreach ($documents_chunk as $chunk) {
                 $this->model_class::markAsVespaIndexed($chunk);
             }
             $documents_chunk = array_chunk(collect($not_indexed)->pluck('id')->unique()->all(), $this->update_chunk_size);
-            foreach ($documents_chunk as $chunk)
-            {
+            foreach ($documents_chunk as $chunk) {
                 $this->model_class::markAsVespaNotIndexed($chunk);
             }
-        }
-        catch (\Exception $ex)
-        {
+        } catch (\Exception $ex) {
             // If there are documents, mark them as not indexed
-            if (!empty($documents))
-            {
+            if (!empty($documents)) {
                 $documents_chunk = array_chunk(collect($documents)->pluck('id')->unique()->all(), $this->update_chunk_size);
-                foreach ($documents_chunk as $chunk)
-                {
+                foreach ($documents_chunk as $chunk) {
                     $this->model_class::markAsVespaNotIndexed($chunk);
                 }
             }
@@ -114,7 +99,7 @@ class FeedDocumentJob implements ShouldQueue
             throw $e;
         }
         $total_duration = Carbon::now()->diffInSeconds($start_time);
-        $this->logger->log("[$this->model]: Vespa was fed in ". gmdate('H:i:s:m', $total_duration), "info");
-        $this->logger->log("[$this->model]: $count_indexed of ". count($documents) . " were indexed in Vespa.", "debug");
+        $this->logger->log("[$this->model]: Vespa was fed in " . gmdate('H:i:s:m', $total_duration), "info");
+        $this->logger->log("[$this->model]: $count_indexed of " . count($documents) . " were indexed in Vespa.", "debug");
     }
 }

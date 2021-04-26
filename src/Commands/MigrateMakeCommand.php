@@ -30,8 +30,8 @@ class MigrateMakeCommand extends IlluminateMigrateMakeCommand
     /**
      * Create a new migration install command instance.
      *
-     * @param  \Escavador\Vespa\Migrations\MigrationCreator $creator
-     * @param  \Illuminate\Support\Composer  $composer
+     * @param \Escavador\Vespa\Migrations\MigrationCreator $creator
+     * @param \Illuminate\Support\Composer $composer
      * @return void
      */
     public function __construct(MigrationCreator $creator, Composer $composer)

@@ -47,7 +47,7 @@ abstract class VespaResult
         return $fields->$key;
     }
 
-    public  final function fields(): object
+    public final function fields(): object
     {
         return $this->fields;
     }

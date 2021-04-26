@@ -4,7 +4,6 @@ namespace Escavador\Vespa\Interfaces;
 
 use Escavador\Vespa\Common\ExceptionObserverManager;
 use Escavador\Vespa\Exception\VespaException;
-use Escavador\Vespa\Interfaces\VespaResult;
 
 abstract class AbstractChild extends VespaResult
 {
