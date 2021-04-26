@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+
+<ruleset name="Custom code standards">
+    <config name="installed_paths" value="standards"/>
+
+    <description>The PSR2 coding standard.</description>
+    <file>src/</file>
+    <exclude-pattern>config</exclude-pattern>
+
+    <rule ref="PSR2">
+        <exclude name="Generic.Files.LineEndings.InvalidEOLChar" />
+        <exclude name="Generic.Files.LineLength.TooLong" />
+    </rule>
+
+    <rule ref="Glen84.NamingConventions.ValidVariableName.NotCamelCaps"/>
+    <rule ref="Drupal.Classes.UnusedUseStatement.UnusedUse"/>
+    <rule ref="Drupal.Commenting.FunctionComment.SpacingAfterParamTag"/>
+    <rule ref="Drupal.Commenting.FunctionComment.SpacingAfterParamType"/>
+    <rule ref="Drupal.Commenting.FunctionComment.ParamCommentNotCapital"/>
+</ruleset>
