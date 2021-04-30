@@ -1,5 +1,0 @@
-suites:
-    main:
-        namespace: Escavador
-        psr4_prefix: Escavador
-        src_path: app
