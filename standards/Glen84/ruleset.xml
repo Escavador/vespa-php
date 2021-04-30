@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ruleset
+    name="Glen84"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../vendor/squizlabs/php_codesniffer/phpcs.xsd">
+    <description>A PSR-12 compliant coding standard for PHP.</description>
+
+    <!-- EXTEND PSR-12 ========================================================================= -->
+
+    <rule ref="PSR12">
+        <!-- Handled (more strictly) by Generic.NamingConventions.CamelCapsFunctionName -->
+        <exclude name="PSR1.Methods.CamelCapsMethodName" />
+    </rule>
+
+    <!-- RULES MODIFIED ======================================================================= -->
+
+    <!-- Ensures that a file declares new symbols, or executes logic with side effects, but not both -->
+    <rule ref="PSR1.Files.SideEffects.FoundWithSymbols">
+        <type>error</type> <!-- Make this an error instead of a warning -->
+    </rule>
+
+    <!-- Verifies that properties are declared correctly -->
+    <rule ref="PSR2.Classes.PropertyDeclaration">
+        <!-- Handled by Glen84.NamingConventions.ValidVariableName -->
+        <exclude name="PSR2.Classes.PropertyDeclaration.Underscore" />
+    </rule>
+
+    <!-- Verifies that there are no "else if" statements ("elseif" should be used instead) -->
+    <rule ref="PSR2.ControlStructures.ElseIfDeclaration.NotAllowed">
+        <type>error</type> <!-- Make this an error instead of a warning -->
+    </rule>
+
+    <!-- Ensures that there is no superfluous whitespace -->
+    <rule ref="Squiz.WhiteSpace.SuperfluousWhitespace">
+        <properties>
+            <!-- Don't ignore blank lines -->
+            <property name="ignoreBlankLines" value="false" />
+        </properties>
+    </rule>
+
+    <!-- Checks that no whitespace precedes the first content of the file -->
+    <rule ref="Squiz.WhiteSpace.SuperfluousWhitespace.StartFile">
+        <!-- Increase severity from 0 -->
+        <severity>5</severity>
+    </rule>
+
+    <!-- Checks that no whitespace exists after the last content of the file -->
+    <rule ref="Squiz.WhiteSpace.SuperfluousWhitespace.EndFile">
+        <!-- Increase severity from 0 -->
+        <severity>5</severity>
+    </rule>
+
+    <!-- Checks that there are not multiple consecutive empty lines in functions -->
+    <rule ref="Squiz.WhiteSpace.SuperfluousWhitespace.EmptyLines">
+        <!-- Increase severity from 0 -->
+        <severity>5</severity>
+    </rule>
+
+    <!-- Ensure 1 space between type hint and argument -->
+    <rule ref="Squiz.Functions.FunctionDeclarationArgumentSpacing.SpacingAfterHint">
+        <!-- Increase severity from 0 -->
+        <severity>5</severity>
+    </rule>
+
+    <!-- RULES ADDED ========================================================================== -->
+
+    <!-- Ensures that arrays are indented one tab stop -->
+    <rule ref="Generic.Arrays.ArrayIndent" />
+
+    <!-- Short array syntax must be used to define arrays -->
+    <rule ref="Generic.Arrays.DisallowLongArraySyntax" />
+
+    <!-- Reports errors if the same class or interface name is used in multiple files -->
+    <rule ref="Generic.Classes.DuplicateClassName">
+        <type>error</type> <!-- Make this an error instead of a warning -->
+    </rule>
+
+    <!-- Detects variable assignments being made within conditions -->
+    <rule ref="Generic.CodeAnalysis.AssignmentInCondition" />
+
+    <!-- Checks for empty PHP statements -->
+    <rule ref="Generic.CodeAnalysis.EmptyPHPStatement" />
+
+    <!-- Detects empty statement bodies -->
+    <rule ref="Generic.CodeAnalysis.EmptyStatement" />
+
+    <!-- Detects for-loops that use a function call in the test expression -->
+    <!-- Comment: Bad for performance -->
+    <rule ref="Generic.CodeAnalysis.ForLoopWithTestFunctionCall">
+        <type>error</type> <!-- Make this an error instead of a warning -->
+    </rule>
+
+    <!-- Detects unconditional if- and elseif-statements -->
+    <!-- Comment: Hiding code with "if (false)" is sloppy -->
+    <rule ref="Generic.CodeAnalysis.UnconditionalIfStatement">
+        <type>error</type> <!-- Make this an error instead of a warning -->
+    </rule>
+
+    <!-- Detects unnecessary final modifiers inside of final classes -->
+    <rule ref="Generic.CodeAnalysis.UnnecessaryFinalModifier">
+        <type>error</type> <!-- Make this an error instead of a warning -->
+    </rule>
+
+    <!-- Checks for unused function parameters -->
+    <rule ref="Generic.CodeAnalysis.UnusedFunctionParameter">
+        <type>error</type> <!-- Make this an error instead of a warning -->
+    </rule>
+
+    <!-- Detects unnecessary overridden methods that simply call their parent -->
+    <rule ref="Generic.CodeAnalysis.UselessOverridingMethod">
+        <type>error</type> <!-- Make this an error instead of a warning -->
+    </rule>
+
+    <!-- Ensures doc blocks follow basic formatting -->
+    <rule ref="Generic.Commenting.DocComment">
+        <!-- Allow single-line doc comments. See https://github.com/squizlabs/PHP_CodeSniffer/issues/258. -->
+        <exclude name="Generic.Commenting.DocComment.ContentAfterOpen" />
+        <exclude name="Generic.Commenting.DocComment.ContentBeforeClose" />
+        <!-- Don't require short description -->
+        <exclude name="Generic.Commenting.DocComment.MissingShort" />
+        <!-- Doesn't work well with annotations -->
+        <exclude name="Generic.Commenting.DocComment.TagValueIndent" />
+    </rule>
+
+    <!-- Ban the use of Yoda conditions -->
+    <rule ref="Generic.ControlStructures.DisallowYodaConditions" />
+
+    <!-- Tests that files are not executable -->
+    <rule ref="Generic.Files.ExecutableFile" />
+
+    <!-- Ensures the whole file is PHP only, with no whitespace or inline HTML anywhere -->
+    <rule ref="Generic.Files.InlineHTML" />
+
+    <!-- Ensures there is no space after cast tokens -->
+    <rule ref="Generic.Formatting.SpaceAfterCast">
+        <properties>
+            <property name="spacing" value="0" />
+        </properties>
+    </rule>
+
+    <!-- Ensures there is no space after a NOT operator -->
+    <rule ref="Generic.Formatting.SpaceAfterNot">
+        <properties>
+            <property name="spacing" value="0" />
+        </properties>
+    </rule>
+
+    <!-- Ensures that method and functions are named correctly -->
+    <!-- Comment: Replaces PSR1.Methods.CamelCapsMethodName -->
+    <rule ref="Generic.NamingConventions.CamelCapsFunctionName" />
+
+    <!-- Disallows the use of any deprecated functions -->
+    <rule ref="Generic.PHP.DeprecatedFunctions" />
+
+    <!-- Ensures the $_REQUEST superglobal is not used -->
+    <rule ref="Generic.PHP.DisallowRequestSuperglobal" />
+
+    <!-- Discourage the use of the PHP `goto` language construct -->
+    <rule ref="Generic.PHP.DiscourageGoto" />
+
+    <!-- Disallows the use of alias functions that are kept in PHP for compatibility with older versions -->
+    <rule ref="Generic.PHP.ForbiddenFunctions">
+        <properties>
+            <property name="forbiddenFunctions" type="array">
+                <element key="sizeof" value="count" />
+                <element key="delete" value="unset" />
+                <element key="print" value="echo" />
+                <element key="is_null" value="null" />
+                <element key="create_function" value="null" />
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Checks that all PHP types are lowercase -->
+    <rule ref="Generic.PHP.LowerCaseType" />
+
+    <!-- Throws an error when any code prefixed with an asperand (@ sign) is encountered -->
+    <rule ref="Generic.PHP.NoSilencedErrors">
+        <properties>
+            <property name="error" value="true" />
+        </properties>
+    </rule>
+
+    <!-- Checks that strict_types has been declared -->
+    <rule ref="Generic.PHP.RequireStrictTypes" />
+
+    <!-- Check for merge conflict artifacts -->
+    <rule ref="Generic.VersionControl.GitMergeConflict" />
+
+    <!-- Check & fix whitespace on the inside of arbitrary parentheses -->
+    <rule ref="Generic.WhiteSpace.ArbitraryParenthesesSpacing">
+        <properties>
+            <property name="ignoreNewlines" value="true" />
+        </properties>
+    </rule>
+
+    <!-- Verifies spacing between variables and increment/decrement operators -->
+    <rule ref="Generic.WhiteSpace.IncrementDecrementSpacing" />
+
+    <!-- Ensures all language constructs contain a single space between themselves and their content -->
+    <rule ref="Generic.WhiteSpace.LanguageConstructSpacing" />
+
+    <!-- Verifies spacing between the spread operator and the variable/function call it applies to -->
+    <rule ref="Generic.WhiteSpace.SpreadOperatorSpacingAfter" />
+
+    <!-- Checks that no perl-style (#) comments are used -->
+    <rule ref="PEAR.Commenting.InlineComment" />
+
+    <!-- Checks that object operators are indented correctly -->
+    <rule ref="PEAR.WhiteSpace.ObjectOperatorIndent">
+        <properties>
+            <property name="multilevel" value="true" />
+        </properties>
+    </rule>
+
+    <!-- Ensure that there are no spaces around square brackets -->
+    <rule ref="Squiz.Arrays.ArrayBracketSpacing" />
+
+    <!-- A test to ensure that arrays conform to the array coding standard -->
+    <rule ref="Squiz.Arrays.ArrayDeclaration">
+        <!-- We don't format our arrays like this -->
+        <exclude name="Squiz.Arrays.ArrayDeclaration.ValueNotAligned" />
+        <exclude name="Squiz.Arrays.ArrayDeclaration.CloseBraceNotAligned" />
+        <exclude name="Squiz.Arrays.ArrayDeclaration.DoubleArrowNotAligned" />
+        <exclude name="Squiz.Arrays.ArrayDeclaration.KeyNotAligned" />
+        <!-- Should be allowed -->
+        <exclude name="Squiz.Arrays.ArrayDeclaration.KeySpecified" />
+        <exclude name="Squiz.Arrays.ArrayDeclaration.MultiLineNotAllowed" />
+        <exclude name="Squiz.Arrays.ArrayDeclaration.NoKeySpecified" />
+        <exclude name="Squiz.Arrays.ArrayDeclaration.SingleLineNotAllowed" />
+        <!-- Not required -->
+        <exclude name="Squiz.Arrays.ArrayDeclaration.NoComma" />
+        <exclude name="Squiz.Arrays.ArrayDeclaration.NoCommaAfterLast" />
+        <!-- Handled by Glen84.Arrays.ArrayDeclaration.ElementNoNewline -->
+        <exclude name="Squiz.Arrays.ArrayDeclaration.IndexNoNewline" />
+        <exclude name="Squiz.Arrays.ArrayDeclaration.ValueNoNewline" />
+        <!-- Handled by Glen84.Arrays.ArrayDeclaration.SpaceBeforeComma -->
+        <exclude name="Squiz.Arrays.ArrayDeclaration.SpaceBeforeComma" />
+    </rule>
+
+    <!-- Tests that the file name and the name of the class contained within the file match -->
+    <rule ref="Squiz.Classes.ClassFileName" />
+
+    <!-- Tests self member references -->
+    <rule ref="Squiz.Classes.SelfMemberReference" />
+
+    <!-- Verifies that block comments are used appropriately -->
+    <rule ref="Squiz.Commenting.BlockComment">
+        <!-- Not required -->
+        <exclude name="Squiz.Commenting.BlockComment.FirstLineIndent" />
+        <exclude name="Squiz.Commenting.BlockComment.LineIndent" />
+        <exclude name="Squiz.Commenting.BlockComment.LastLineIndent" />
+        <!-- Allow for inline doc block comments -->
+        <exclude name="Squiz.Commenting.BlockComment.WrongStart" />
+        <!-- Prevents /* @var */ syntax from being used -->
+        <exclude name="Squiz.Commenting.BlockComment.SingleLine" />
+    </rule>
+
+    <!-- Tests that the stars in a doc comment align correctly -->
+    <rule ref="Squiz.Commenting.DocCommentAlignment">
+        <!-- Won't always be a single space, because of Doctrine annotations -->
+        <exclude name="Squiz.Commenting.DocCommentAlignment.SpaceAfterStar" />
+    </rule>
+
+    <!-- Checks for empty catch clause. Catch clauses must at least have comment -->
+    <rule ref="Squiz.Commenting.EmptyCatchComment" />
+
+    <!-- Parses and verifies the doc comments for functions -->
+    <rule ref="Squiz.Commenting.FunctionComment">
+        <!-- Forces "integer" instead of "int" (etc.), which we don't want -->
+        <exclude name="Squiz.Commenting.FunctionComment.IncorrectParamVarName" />
+        <exclude name="Squiz.Commenting.FunctionComment.InvalidReturn" />
+        <!-- Not required -->
+        <exclude name="Squiz.Commenting.FunctionComment.EmptyThrows" />
+        <exclude name="Squiz.Commenting.FunctionComment.Missing" />
+        <exclude name="Squiz.Commenting.FunctionComment.MissingParamComment" />
+        <exclude name="Squiz.Commenting.FunctionComment.MissingParamTag" />
+        <exclude name="Squiz.Commenting.FunctionComment.MissingReturn" />
+        <exclude name="Squiz.Commenting.FunctionComment.ParamCommentFullStop" />
+        <exclude name="Squiz.Commenting.FunctionComment.ThrowsNoFullStop" />
+    </rule>
+
+    <!-- Checks that there is adequate spacing between comments -->
+    <rule ref="Squiz.Commenting.InlineComment">
+        <!-- Inline doc block comments should be allowed -->
+        <exclude name="Squiz.Commenting.InlineComment.DocBlock" />
+        <!-- Not required -->
+        <exclude name="Squiz.Commenting.InlineComment.InvalidEndChar" />
+        <exclude name="Squiz.Commenting.InlineComment.SpacingAfter" />
+    </rule>
+
+    <!-- Checks that duplicate arguments are not used in function declarations -->
+    <rule ref="Squiz.Functions.FunctionDuplicateArgument" />
+
+    <!-- Checks to ensure that the logical operators 'and' and 'or' are not used -->
+    <rule ref="Squiz.Operators.ValidLogicalOperators" />
+
+    <!-- Disallows the use of debug functions -->
+    <rule ref="Squiz.PHP.DiscouragedFunctions">
+        <properties>
+            <property name="error" value="true" />
+        </properties>
+    </rule>
+
+    <!-- Disallows the use of eval() -->
+    <rule ref="Squiz.PHP.Eval.Discouraged">
+        <type>error</type> <!-- Make this an error instead of a warning -->
+        <message>Use of eval() is not allowed</message>
+    </rule>
+
+    <!-- Stops the usage of the "global" keyword -->
+    <rule ref="Squiz.PHP.GlobalKeyword" />
+
+    <!-- Ensures that functions within functions are never used -->
+    <rule ref="Squiz.PHP.InnerFunctions" />
+
+    <!-- Ensures all calls to inbuilt PHP functions are lowercase -->
+    <rule ref="Squiz.PHP.LowercasePHPFunctions" />
+
+    <!-- Ensures that all code is reachable -->
+    <rule ref="Squiz.PHP.NonExecutableCode">
+        <type>error</type> <!-- Make this an error instead of a warning -->
+    </rule>
+
+    <!-- Checks for usage of "$this" in static methods, which will cause runtime errors -->
+    <rule ref="Squiz.Scope.StaticThisUsage" />
+
+    <!-- Makes sure that any strings that are "echoed" are not enclosed in brackets like a function call -->
+    <rule ref="Squiz.Strings.EchoedStrings" />
+
+    <!-- Ensure cast statements don't contain whitespace -->
+    <rule ref="Squiz.WhiteSpace.CastSpacing" />
+
+    <!-- Checks that control structures have the correct spacing around brackets -->
+    <rule ref="Squiz.WhiteSpace.ControlStructureSpacing">
+        <!-- Handled by PSR2.ControlStructures.ControlStructureSpacing -->
+        <exclude name="Squiz.WhiteSpace.ControlStructureSpacing.SpacingAfterOpenBrace" />
+        <!-- Handled by PSR2.ControlStructures.ControlStructureSpacing -->
+        <exclude name="Squiz.WhiteSpace.ControlStructureSpacing.SpaceBeforeCloseBrace" />
+        <!-- Handled by Squiz.ControlStructures.ControlSignature -->
+        <exclude name="Squiz.WhiteSpace.ControlStructureSpacing.SpacingAfterOpen" />
+        <!-- Not required -->
+        <exclude name="Squiz.WhiteSpace.ControlStructureSpacing.LineAfterClose" />
+    </rule>
+
+    <!-- Checks that there is no empty line after the opening brace of a function -->
+    <rule ref="Squiz.WhiteSpace.FunctionOpeningBraceSpace" />
+
+    <!-- Checks the separation between functions and methods -->
+    <rule ref="Squiz.WhiteSpace.FunctionSpacing">
+        <properties>
+            <property name="spacing" value="1" />
+            <property name="spacingAfterLast" value="0" />
+            <property name="spacingBeforeFirst" value="0" />
+        </properties>
+    </rule>
+
+    <!-- Ensure there are no spaces before/after an object operator -->
+    <rule ref="Squiz.WhiteSpace.ObjectOperatorSpacing">
+        <properties>
+            <!-- Allow newlines after object operators -->
+            <property name="ignoreNewlines" value="true" />
+        </properties>
+    </rule>
+
+    <!-- Ensure there is no whitespace before a semicolon -->
+    <rule ref="Squiz.WhiteSpace.SemicolonSpacing" />
+</ruleset>

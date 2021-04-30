@@ -27,7 +27,8 @@
     "guzzlehttp/guzzle": "7.0.*"
   },
   "require-dev": {
-    "phpunit/phpunit": "^7.5"
+    "phpunit/phpunit": "^7.5",
+    "squizlabs/php_codesniffer": "*"
   },
   "autoload": {
     "psr-4": {
