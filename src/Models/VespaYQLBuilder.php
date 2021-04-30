@@ -225,6 +225,14 @@ class VespaYQLBuilder
         return $this;
     }
 
+    public function addManyDocumentType(array $document_type): VespaYQLBuilder
+    {
+        foreach ($document_type as $type) {
+            $this->addDocumentType($type);
+        }
+        return $this;
+    }
+
     public function limit(int $limit): VespaYQLBuilder
     {
         $this->limit = strval($limit);
@@ -311,9 +319,16 @@ class VespaYQLBuilder
     private function applySearchConditions(array $search_condition_groups, &$has_condition = false): string
     {
         $yql = "";
+        $is_first_condition = true;
         foreach ($search_condition_groups as $search_conditions) {
             if (isset($search_conditions["conditions"])) {
-                $yql .= "(";
+                if (isset($search_conditions['logical_operator'])) {
+                    if($search_conditions['logical_operator'] == "AND!" && !$has_condition) {
+                        $yql .= "!(";
+                    } elseif($has_condition) {
+                        $yql .= " {$search_conditions['logical_operator']} (";
+                    }
+                }
                 $yql .= $this->applySearchConditions($search_conditions["conditions"], $has_condition);
                 $yql .= ")";
                 continue;
@@ -322,47 +337,57 @@ class VespaYQLBuilder
             $search_condition = $search_conditions['condition'];
             $logical_operator = isset($search_conditions['logical_operator']) ? $search_conditions['logical_operator'] : null;
 
-            // Convert the NOT operator to the correct form when it is at the beginning of the condition
-            if ($has_condition) {
-                $yql .= " {$logical_operator} ";
-            } else {
-                if ($logical_operator == "AND!") {
-                    $yql .= " ! ";
+            if ($logical_operator !== null) {
+                if (!$has_condition && $is_first_condition) {
+                    // Convert the NOT operator to the correct form when it is at the beginning of the condition
+                    if ($logical_operator == "AND!") {
+                        $open_group = "";
+                        while (substr("$yql", -1, 1) == "(") {
+                            $yql = substr($yql, 0, -1);
+                            $open_group .= "(";
+                        }
+                        $yql .= " !$open_group";
+                    }
+                } elseif ($has_condition && $is_first_condition) {
+                    $open_group = "";
+                    while (substr("$yql", -1, 1) == "(") {
+                        $yql = substr($yql, 0, -1);
+                        $open_group .= "(";
+                    }
+                    $yql .= " $logical_operator $open_group";
+                } elseif ($has_condition && !$is_first_condition) {
+                    $yql .= " {$logical_operator} ";
                 }
             }
 
-            $yql .= "(";
 
-            if (count($search_condition) == 1) {
-                $condition = $search_condition[0];
-            } else {
-                $operator = $search_condition[2];
-                switch (strtoupper($operator)) {
-                    case "=":
-                        $condition = implode(" ", $search_condition);
-                        break;
-                    case "PHRASE":
-                        $condition = $this->formatPhraseCondition($search_condition);
-                        break;
-                    case "WAND":
-                        $condition = $this->formatWandCondition($search_condition);
-                        break;
-                    case "WEAKAND":
-                        $condition = $this->formatWeakAndCondition($search_condition);
-                        break;
-                    case "NEAR":
-                    case "ONEAR":
-                        $condition = $this->formatNearCondition($search_condition);
-                        break;
-                    default:
-                        $condition = "({$search_condition[0]} {$search_condition[2]} ({$search_condition[1]} {$search_condition[3]}))";
-                }
+            $operator = $search_condition[2];
+            switch (strtoupper($operator)) {
+                case "PHRASE":
+                    $condition = $this->formatPhraseCondition($search_condition);
+                    break;
+                case "WAND":
+                    $condition = $this->formatWandCondition($search_condition);
+                    break;
+                case "WEAKAND":
+                    $condition = $this->formatWeakAndCondition($search_condition);
+                    break;
+                case "NEAR":
+                case "ONEAR":
+                    $condition = $this->formatNearCondition($search_condition);
+                    break;
+                default:
+                    // If no options were passed
+                    if (count($search_condition) > 1 && empty($search_condition[1])) {
+                        unset($search_condition[1]);
+                    }
+                    $condition = implode(" ", $search_condition);
             }
 
             $has_condition = true;
+            $is_first_condition = false;
 
-            $yql .= " {$condition} ";
-            $yql .= ")";
+            $yql .= "({$condition})";
         }
 
 
