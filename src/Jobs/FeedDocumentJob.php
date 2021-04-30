@@ -8,7 +8,6 @@ use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Common\VespaExceptionSubject;
 use Escavador\Vespa\Exception\VespaFeedException;
 use Escavador\Vespa\Models\DocumentDefinition;
-use GuzzleHttp\Client;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
