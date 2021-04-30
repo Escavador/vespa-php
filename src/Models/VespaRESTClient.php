@@ -2,7 +2,6 @@
 
 namespace Escavador\Vespa\Models;
 
-
 use Escavador\Vespa\Common\LogManager;
 use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Common\VespaExceptionSubject;
@@ -21,7 +20,6 @@ use GuzzleHttp\Pool;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\RequestOptions;
-
 
 /**
  *
@@ -68,10 +66,11 @@ class VespaRESTClient extends AbstractClient
         if ($response->getStatusCode() == 200) {
             $content = $response->getBody()->getContents();
             $searchIsGrouping = strpos($content, "group:root") !== false; //TODO improve this check
-            if ($searchIsGrouping)
+            if ($searchIsGrouping) {
                 return new GroupedSearchResult($content);
-            else
+            } else {
                 return new SearchResult($content);
+            }
         }
 
         $e = new VespaFailSearchException($data, new \Exception($response->getBody()->getContents(), $response->getStatusCode()));
@@ -97,8 +96,9 @@ class VespaRESTClient extends AbstractClient
         if ($response->getStatusCode() == 200) {
             $content = $response->getBody()->getContents();
             $result = new DocumentResult($content);
-            if ($result->onlyRaw())
+            if ($result->onlyRaw()) {
                 return $result;
+            }
 
             return $result->document();
         } else {
@@ -153,8 +153,9 @@ class VespaRESTClient extends AbstractClient
         if ($response->getStatusCode() == 200) {
             $content = $response->getBody()->getContents();
             $result = new DocumentResult($content);
-            if ($result->onlyRaw())
+            if ($result->onlyRaw()) {
                 return $result;
+            }
 
             return $result->document();
         } else {

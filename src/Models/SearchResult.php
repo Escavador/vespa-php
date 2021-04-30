@@ -2,7 +2,6 @@
 
 namespace Escavador\Vespa\Models;
 
-
 use Escavador\Vespa\Interfaces\VespaResult;
 
 class SearchResult extends VespaResult
@@ -16,8 +15,9 @@ class SearchResult extends VespaResult
     {
         parent::__construct($result, $only_raw);
 
-        if ($this->only_raw)
+        if ($this->only_raw) {
             return;
+        }
 
         try {
             $result = (object)json_decode($result);
@@ -27,8 +27,7 @@ class SearchResult extends VespaResult
             $this->fields = $result->root->fields;
             $this->children = isset($result->root->children) ? $this->parseChildren($result->root->children) : [];
             $this->only_raw = false;
-        } catch (\Exception $ex) //TOOD Custom Exception
-        {
+        } catch (\Exception $ex) { //TOOD Custom Exception
             $this->only_raw = true;
         }
     }

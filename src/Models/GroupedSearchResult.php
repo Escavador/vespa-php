@@ -2,7 +2,6 @@
 
 namespace Escavador\Vespa\Models;
 
-
 use Escavador\Vespa\Interfaces\VespaResult;
 
 class GroupedSearchResult extends VespaResult
@@ -17,8 +16,9 @@ class GroupedSearchResult extends VespaResult
     {
         parent::__construct($result, $only_raw);
 
-        if ($this->only_raw)
+        if ($this->only_raw) {
             return;
+        }
 
         try {
             $result = (object)json_decode($result);
@@ -28,8 +28,7 @@ class GroupedSearchResult extends VespaResult
             $this->fields = $result->root->fields;
             $this->parseChildren($result->root);
             $this->only_raw = false;
-        } catch (\Exception $ex) //TOOD Custom Exception
-        {
+        } catch (\Exception $ex) { //TOOD Custom Exception
             $this->only_raw = true;
         }
     }
