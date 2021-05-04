@@ -1,0 +1,14 @@
+version: "3"
+
+services:
+  vespa-php:
+    container_name: vespa-php
+    build:
+      context: ./
+      dockerfile: docker/Dockerfile
+    working_dir: /var/www
+    entrypoint: /usr/local/bin/run-server
+    volumes:
+      - ./:/vespa-php:cached
+    expose:
+      - 9000

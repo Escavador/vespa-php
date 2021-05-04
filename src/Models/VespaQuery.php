@@ -15,7 +15,7 @@ class VespaQuery
         $this->parent_client = $client;
     }
 
-    public final function get(bool $reset = true): VespaResult
+    final public function get(bool $reset = true): VespaResult
     {
         $payload = $this->toArray();
         if ($reset) {
@@ -24,7 +24,7 @@ class VespaQuery
         return $this->parent_client->search($payload);
     }
 
-    public final function toArray(): array
+    final public function toArray(): array
     {
         $arr = get_object_vars($this);
         unset($arr['parent_client']);
@@ -32,7 +32,7 @@ class VespaQuery
         return $arr;
     }
 
-    public final function reset(): VespaQuery
+    final public function reset(): VespaQuery
     {
         $vars = get_object_vars($this);
         unset($vars['parent_client']);
@@ -45,328 +45,328 @@ class VespaQuery
         return $this;
     }
 
-    public final function payload(string $field, $data): VespaQuery
+    final public function payload(string $field, $data): VespaQuery
     {
         $this->$field = $data;
 
         return $this;
     }
 
-    public final function query(string $query): VespaQuery
+    final public function query(string $query): VespaQuery
     {
         $this->query = Utils::removeExtraSpace($query);
 
         return $this;
     }
 
-    public final function yql(string $yql_statement): VespaQuery
+    final public function yql(string $yql_statement): VespaQuery
     {
         $this->yql = Utils::removeExtraSpace($yql_statement);
 
         return $this;
     }
 
-    public final function offset(int $offset): VespaQuery
+    final public function offset(int $offset): VespaQuery
     {
         $this->offset = $offset;
 
         return $this;
     }
 
-    public final function hits(int $hits): VespaQuery
+    final public function hits(int $hits): VespaQuery
     {
         $this->hits = $hits;
 
         return $this;
     }
 
-    public final function timeout(float $timeout): VespaQuery
+    final public function timeout(float $timeout): VespaQuery
     {
         $this->timeout = $timeout;
 
         return $this;
     }
 
-    public final function type(string $type): VespaQuery
+    final public function type(string $type): VespaQuery
     {
         $this->type = $type;
 
         return $this;
     }
 
-    public final function traceLevel(int $traceLevel): VespaQuery
+    final public function traceLevel(int $traceLevel): VespaQuery
     {
         $this->traceLevel = $traceLevel;
 
         return $this;
     }
 
-    public final function tracelevelRules(int $rules): VespaQuery
+    final public function tracelevelRules(int $rules): VespaQuery
     {
         $this->tracelevel = ['rules' => $rules];
 
         return $this;
     }
 
-    public final function noCache($noCache): VespaQuery
+    final public function noCache($noCache): VespaQuery
     {
         $this->noCache = $noCache;
 
         return $this;
     }
 
-    public final function groupingSessionCache(bool $groupingSessionCache): VespaQuery
+    final public function groupingSessionCache(bool $groupingSessionCache): VespaQuery
     {
         $this->groupingSessionCache = $groupingSessionCache;
 
         return $this;
     }
 
-    public final function searchChain(string $searchChain): VespaQuery
+    final public function searchChain(string $searchChain): VespaQuery
     {
         $this->searchChain = $searchChain;
 
         return $this;
     }
 
-    public final function user(string $user): VespaQuery
+    final public function user(string $user): VespaQuery
     {
         $this->user = $user;
 
         return $this;
     }
 
-    public final function recall(array $recall): VespaQuery
+    final public function recall(array $recall): VespaQuery
     {
         $this->recall = $recall;
 
         return $this;
     }
 
-    public final function nocachewrite(bool $nocachewrite): VespaQuery
+    final public function nocachewrite(bool $nocachewrite): VespaQuery
     {
         $this->nocachewrite = $nocachewrite;
 
         return $this;
     }
 
-    public final function collapsesize(int $collapsesize): VespaQuery
+    final public function collapsesize(int $collapsesize): VespaQuery
     {
         $this->collapsesize = $collapsesize;
 
         return $this;
     }
 
-    public final function collapsefield(string $collapsefield): VespaQuery
+    final public function collapsefield(string $collapsefield): VespaQuery
     {
         $this->collapsefield = $collapsefield;
 
         return $this;
     }
 
-    public final function queryProfile(string $queryProfile): VespaQuery
+    final public function queryProfile(string $queryProfile): VespaQuery
     {
         $this->queryProfile = $queryProfile;
 
         return $this;
     }
 
-    public final function rulesOff(bool $off): VespaQuery
+    final public function rulesOff(bool $off): VespaQuery
     {
         return $this->rules('off', $off);
     }
 
-    public final function streamingUserid(int $userid): VespaQuery
+    final public function streamingUserid(int $userid): VespaQuery
     {
         return $this->streaming('userid', $userid);
     }
 
-    public final function streamingGroupname(string $groupname): VespaQuery
+    final public function streamingGroupname(string $groupname): VespaQuery
     {
         return $this->streaming('groupname', $groupname);
     }
 
-    public final function streamingSelection(string $selection): VespaQuery
+    final public function streamingSelection(string $selection): VespaQuery
     {
         return $this->streaming('selection', $selection);
     }
 
-    public final function streamingPriority(string $priority): VespaQuery
+    final public function streamingPriority(string $priority): VespaQuery
     {
         return $this->streaming('priority', $priority);
     }
 
-    public final function streamingMaxbucketspervisitor(int $maxbucketspervisitor): VespaQuery
+    final public function streamingMaxbucketspervisitor(int $maxbucketspervisitor): VespaQuery
     {
         return $this->streaming('maxbucketspervisitor', $maxbucketspervisitor);
     }
 
-    public final function rulesRulebase(string $rulebase): VespaQuery
+    final public function rulesRulebase(string $rulebase): VespaQuery
     {
         return $this->rules('rulebase', $rulebase);
     }
 
-    public final function collapseSummary(string $summary): VespaQuery
+    final public function collapseSummary(string $summary): VespaQuery
     {
         return $this->collapse('summary', $summary);
     }
 
-    public final function posLL(string $ll): VespaQuery
+    final public function posLL(string $ll): VespaQuery
     {
         return $this->pos('ll', $ll);
     }
 
-    public final function posRadius(string $radius): VespaQuery
+    final public function posRadius(string $radius): VespaQuery
     {
         return $this->pos('radius', $radius);
     }
 
-    public final function posBB(array $bb): VespaQuery
+    final public function posBB(array $bb): VespaQuery
     {
         return $this->pos('bb', $bb);
     }
 
-    public final function posAttribute(string $attribute): VespaQuery
+    final public function posAttribute(string $attribute): VespaQuery
     {
         return $this->pos('attribute', $attribute);
     }
 
-    public final function rankingProfile(string $profile): VespaQuery
+    final public function rankingProfile(string $profile): VespaQuery
     {
         return $this->ranking('profile', $profile);
     }
 
-    public final function rankingSorting(string $sorting): VespaQuery
+    final public function rankingSorting(string $sorting): VespaQuery
     {
         return $this->ranking('sorting', $sorting);
     }
 
-    public final function rankingQueryCache(bool $queryCache): VespaQuery
+    final public function rankingQueryCache(bool $queryCache): VespaQuery
     {
         return $this->ranking('queryCache', $queryCache);
     }
 
-    public final function rankingFreshness(string $freshness): VespaQuery
+    final public function rankingFreshness(string $freshness): VespaQuery
     {
         return $this->ranking('freshness', $freshness);
     }
 
-    public final function rankingMatchPhaseMaxHits($maxHits): VespaQuery
+    final public function rankingMatchPhaseMaxHits($maxHits): VespaQuery
     {
         return $this->rankingMatchPhase('maxHits', $maxHits);
     }
 
-    public final function rankingMatchPhaseAttribute(string $attribute): VespaQuery
+    final public function rankingMatchPhaseAttribute(string $attribute): VespaQuery
     {
         return $this->rankingMatchPhase('attribute', $attribute);
     }
 
-    public final function rankingMatchPhaseAscending(bool $ascending): VespaQuery
+    final public function rankingMatchPhaseAscending(bool $ascending): VespaQuery
     {
         return $this->rankingMatchPhase('ascending', $ascending);
     }
 
-    public final function rankingMatchPhaseDiversityAttribute(string $attribute): VespaQuery
+    final public function rankingMatchPhaseDiversityAttribute(string $attribute): VespaQuery
     {
         return $this->rankingMatchPhaseDiversity('attribute', $attribute);
     }
 
-    public final function rankingMatchPhaseDiversityMinGroups($minGroups): VespaQuery
+    final public function rankingMatchPhaseDiversityMinGroups($minGroups): VespaQuery
     {
         return $this->rankingMatchPhaseDiversity('minGroups', $minGroups);
     }
 
-    public final function rankingListFeatures(bool $listFeatures): VespaQuery
+    final public function rankingListFeatures(bool $listFeatures): VespaQuery
     {
         return $this->ranking('listFeatures', $listFeatures);
     }
 
-    public final function rankingLocation(string $location): VespaQuery
+    final public function rankingLocation(string $location): VespaQuery
     {
         return $this->ranking('location', $location);
     }
 
-    public final function rankingFeaturesFeatureName($featurename): VespaQuery
+    final public function rankingFeaturesFeatureName($featurename): VespaQuery
     {
         return $this->rankingFeatures('featurename', $featurename);
     }
 
-    public final function rankingPropertiesPropertyName($propertyname): VespaQuery
+    final public function rankingPropertiesPropertyName($propertyname): VespaQuery
     {
         return $this->rankingProperties('properties', $propertyname);
     }
 
-    public final function modelType(string $type): VespaQuery
+    final public function modelType(string $type): VespaQuery
     {
         return $this->model('type', $type);
     }
 
-    public final function modelRestrict(array $restrict): VespaQuery
+    final public function modelRestrict(array $restrict): VespaQuery
     {
         return $this->model('restrict', implode(", ", $restrict));
     }
 
-    public final function modelSources(array $sources): VespaQuery
+    final public function modelSources(array $sources): VespaQuery
     {
         return $this->model('sources', implode(", ", $sources));
     }
 
-    public final function modelLanguage(string $language): VespaQuery
+    final public function modelLanguage(string $language): VespaQuery
     {
         return $this->model('language', $language);
     }
 
-    public final function modelEncoding(string $encoding): VespaQuery
+    final public function modelEncoding(string $encoding): VespaQuery
     {
         return $this->model('encoding', $encoding);
     }
 
-    public final function modelQueryString(string $queryString): VespaQuery
+    final public function modelQueryString(string $queryString): VespaQuery
     {
         return $this->model('queryString', $queryString);
     }
 
-    public final function modelSearchPath(string $searchPath): VespaQuery
+    final public function modelSearchPath(string $searchPath): VespaQuery
     {
         return $this->model('searchPath', $searchPath);
     }
 
-    public final function modelDefaultIndex(string $defaultIndex): VespaQuery
+    final public function modelDefaultIndex(string $defaultIndex): VespaQuery
     {
         return $this->model('defaultIndex', $defaultIndex);
     }
 
-    public final function presentationBolding(bool $bolding): VespaQuery
+    final public function presentationBolding(bool $bolding): VespaQuery
     {
         return $this->presentation('bolding', $bolding);
     }
 
-    public final function presentationFormat(string $format): VespaQuery
+    final public function presentationFormat(string $format): VespaQuery
     {
         return $this->presentation('format', $format);
     }
 
-    public final function presentationSummary(string $summary): VespaQuery
+    final public function presentationSummary(string $summary): VespaQuery
     {
         return $this->presentation('summary', $summary);
     }
 
-    public final function presentationTemplate(string $template): VespaQuery
+    final public function presentationTemplate(string $template): VespaQuery
     {
         return $this->presentation('template', $template);
     }
 
-    public final function presentationTiming(bool $timing): VespaQuery
+    final public function presentationTiming(bool $timing): VespaQuery
     {
         return $this->presentation('timing', $timing);
     }
 
-    public final function traceTimestamps(bool $timestamps): VespaQuery
+    final public function traceTimestamps(bool $timestamps): VespaQuery
     {
         return $this->presentation('timestamps', $timestamps);
     }
 
-    public final function metricsIgnore(bool $ignore): VespaQuery
+    final public function metricsIgnore(bool $ignore): VespaQuery
     {
         return $this->metrics('ignore', $ignore);
     }
@@ -401,8 +401,9 @@ class VespaQuery
 
     private function ranking($key, $value)
     {
-        if (!property_exists($this, 'ranking'))
+        if (!property_exists($this, 'ranking')) {
             $this->ranking = [];
+        }
 
         $this->ranking[$key] = $value;
         return $this;
@@ -410,8 +411,9 @@ class VespaQuery
 
     private function model($key, $value)
     {
-        if (!property_exists($this, 'model'))
+        if (!property_exists($this, 'model')) {
             $this->model = [];
+        }
 
         $this->model[$key] = $value;
         return $this;
@@ -419,8 +421,9 @@ class VespaQuery
 
     private function presentation($key, $value)
     {
-        if (!property_exists($this, 'presentation'))
+        if (!property_exists($this, 'presentation')) {
             $this->presentation = [];
+        }
 
         $this->presentation[$key] = $value;
         return $this;
@@ -428,8 +431,9 @@ class VespaQuery
 
     private function trace($key, $value)
     {
-        if (!property_exists($this, 'trace'))
+        if (!property_exists($this, 'trace')) {
             $this->trace = [];
+        }
 
         $this->trace[$key] = $value;
         return $this;
@@ -437,8 +441,9 @@ class VespaQuery
 
     private function metrics($key, $value)
     {
-        if (!property_exists($this, 'metrics'))
+        if (!property_exists($this, 'metrics')) {
             $this->metrics = [];
+        }
 
         $this->metrics[$key] = $value;
         return $this;
@@ -446,8 +451,9 @@ class VespaQuery
 
     private function collapse($key, $value)
     {
-        if (!property_exists($this, 'collapse'))
+        if (!property_exists($this, 'collapse')) {
             $this->collapse = [];
+        }
 
         $this->collapse[$key] = $value;
         return $this;
@@ -455,8 +461,9 @@ class VespaQuery
 
     private function pos($key, $value)
     {
-        if (!property_exists($this, 'pos'))
+        if (!property_exists($this, 'pos')) {
             $this->pos = [];
+        }
 
         $this->pos[$key] = $value;
         return $this;
@@ -464,8 +471,9 @@ class VespaQuery
 
     private function rules($key, $value)
     {
-        if (!property_exists($this, 'rules'))
+        if (!property_exists($this, 'rules')) {
             $this->rules = [];
+        }
 
         $this->rules[$key] = $value;
         return $this;
@@ -473,8 +481,9 @@ class VespaQuery
 
     private function streaming($key, $value)
     {
-        if (!property_exists($this, 'streaming'))
+        if (!property_exists($this, 'streaming')) {
             $this->streaming = [];
+        }
 
         $this->streaming[$key] = $value;
         return $this;

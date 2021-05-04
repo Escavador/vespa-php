@@ -18,25 +18,27 @@ abstract class VespaResult
         $this->only_raw = $only_raw;
 
         //if json cannot be decoded
-        if ($result === null) throw new \Exception("Invalid response");
+        if ($result === null) {
+            throw new \Exception("Invalid response");
+        }
     }
 
-    public final function onlyRaw(): bool
+    final public function onlyRaw(): bool
     {
         return $this->only_raw;
     }
 
-    public final function raw(): string
+    final public function raw(): string
     {
         return $this->json_data;
     }
 
-    public final function json(): string
+    final public function json(): string
     {
         return json_encode($this->json_data);
     }
 
-    public final function field($key)
+    final public function field($key)
     {
         $fields = $this->getAttribute('fields');
 
@@ -47,12 +49,12 @@ abstract class VespaResult
         return $fields->$key;
     }
 
-    public final function fields(): object
+    final public function fields(): object
     {
         return $this->fields;
     }
 
-    public final function getAttribute($attribute)
+    final public function getAttribute($attribute)
     {
         if ($this->onlyRaw()) {
             $e = new VespaException("This response was not normalized. Please see the \"raw\" property. {$this->raw()}");

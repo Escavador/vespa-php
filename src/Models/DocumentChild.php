@@ -7,7 +7,6 @@ use Escavador\Vespa\Exception\VespaException;
 use Escavador\Vespa\Interfaces\AbstractChild;
 use Escavador\Vespa\Interfaces\AbstractDocument;
 
-
 class DocumentChild extends AbstractChild
 {
     protected $source;
@@ -27,7 +26,7 @@ class DocumentChild extends AbstractChild
         return $this->document;
     }
 
-    public final function hits(): array
+    final public function hits(): array
     {
         if (!$this->hits) {
             $open_tag = config('vespa.default.tags.open', '<hi>');

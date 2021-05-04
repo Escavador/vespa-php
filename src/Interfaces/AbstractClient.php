@@ -32,7 +32,7 @@ abstract class AbstractClient
         ]);
     }
 
-    public final function refreshDefinitions()
+    final public function refreshDefinitions()
     {
         $this->documents = DocumentDefinition::loadDefinition();
     }
