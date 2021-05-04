@@ -7,6 +7,15 @@ WORKDIR /build
 
 COPY . /build
 
+RUN apt update \
+    && rm /etc/apt/preferences.d/no-debian-php \
+    && apt update -yqq \
+    && apt install -y --force-yes --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    locales
+
 RUN composer install
 
 FROM php:7.3-fpm
@@ -14,14 +23,6 @@ FROM php:7.3-fpm
 WORKDIR /var/www
 
 SHELL ["/bin/bash", "-c"]
-
-RUN apt update \
-    && rm /etc/apt/preferences.d/no-debian-php \
-    && apt update -yqq \
-    && apt install -y --force-yes --no-install-recommends \
-    build-essential \
-    curl \
-    locales
 
 # Install the xdebug extension
 RUN pecl install xdebug && docker-php-ext-enable xdebug
