@@ -10,9 +10,7 @@ class VespaYQLBuilder
     public function __construct()
     {
         $this->search_condition_groups = [];
-        $this->last_group = &$this->search_condition_groups;
-        $new_group = &$this->createGroup($this->last_group);
-        $this->last_group = &$new_group;
+        $this->last_group= &$this->createGroup($this->search_condition_groups);
         $this->document_type = [];
         $this->used_document_type = [];
     }
