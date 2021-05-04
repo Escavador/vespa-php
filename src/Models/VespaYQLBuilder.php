@@ -17,12 +17,12 @@ class VespaYQLBuilder
         $this->used_document_type = [];
     }
 
-    public final function view(): string
+    final public function view(): string
     {
         return $this->__toString();
     }
 
-    public final function reset(): VespaYQLBuilder
+    final public function reset(): VespaYQLBuilder
     {
         $vars = get_object_vars($this);
         $properties = array_keys($vars);
@@ -34,7 +34,7 @@ class VespaYQLBuilder
         return $this;
     }
 
-    public final function hasWhereConditions(): bool
+    final public function hasWhereConditions(): bool
     {
         return !empty($this->search_condition_groups);
     }
@@ -124,10 +124,14 @@ class VespaYQLBuilder
         return $this;
     }
 
-    public function addDistanceCondition(string $term, string $field = 'default', int $word_distance = 3,
-                                         $logical_operator = "AND", bool $stemming = false,
-                                         $same_order = true): VespaYQLBuilder
-    {
+    public function addDistanceCondition(
+        string $term,
+        string $field = 'default',
+        int $word_distance = 3,
+        $logical_operator = "AND",
+        bool $stemming = false,
+        $same_order = true
+    ): VespaYQLBuilder {
         $term = Utils::removeQuotes($term);
         $term = Utils::removeExtraSpace($term);
         [$tokens, $not_tokens] = $this->tokenizeTerm($term, true);
@@ -170,7 +174,9 @@ class VespaYQLBuilder
     public function addNumericCondition($term, string $field = 'default', string $operator = '=', string $logical_operator = "AND"): VespaYQLBuilder
     {
         $allowed_operators = ["=", ">", "<", "<=", ">="];
-        if (!is_numeric($term)) throw new VespaInvalidYQLQueryException("The variable '\$term' ({$term}) must be numeric.");
+        if (!is_numeric($term)) {
+            throw new VespaInvalidYQLQueryException("The variable '\$term' ({$term}) must be numeric.");
+        }
         return $this->createGroupCondition($field, $operator, $term, $logical_operator, null, $allowed_operators);
     }
 
@@ -197,8 +203,9 @@ class VespaYQLBuilder
 
     public function addField(string $field): VespaYQLBuilder
     {
-        if (!isset($this->fields))
+        if (!isset($this->fields)) {
             $this->fields = [];
+        }
 
         $this->fields[] = $field;
 
@@ -208,10 +215,13 @@ class VespaYQLBuilder
     public function addSource(string $source): VespaYQLBuilder
     {
         $source = Utils::removeQuotes($source);
-        if (!isset($this->sources))
+        if (!isset($this->sources)) {
             $this->sources = [];
+        }
 
-        if (!in_array($source, $this->sources)) $this->sources[] = $source;
+        if (!in_array($source, $this->sources)) {
+            $this->sources[] = $source;
+        }
 
         return $this;
     }
@@ -253,8 +263,9 @@ class VespaYQLBuilder
             throw new VespaInvalidYQLQueryException("Syntax Error. The property \"order by\" should be \"DESC\" or \"ASC\"");
         }
 
-        if (!isset($this->orderBy))
+        if (!isset($this->orderBy)) {
             $this->orderBy = [];
+        }
 
         $this->orderBy[$field] = strtoupper($order);
 
@@ -390,7 +401,6 @@ class VespaYQLBuilder
             $yql .= "({$condition})";
         }
 
-
         return $yql;
     }
 
@@ -419,16 +429,24 @@ class VespaYQLBuilder
     private function createWand(array $term, string $field = 'default', int $target_num_hits = null, float $score_threshold = null, $logical_operator = 'AND'): VespaYQLBuilder
     {
         $wand_option = [];
-        if ($target_num_hits !== null) $wand_option["targetNumHits"] = $target_num_hits;
-        if ($score_threshold !== null) $wand_option["scoreThreshold"] = $score_threshold;
+        if ($target_num_hits !== null) {
+            $wand_option["targetNumHits"] = $target_num_hits;
+        }
+        if ($score_threshold !== null) {
+            $wand_option["scoreThreshold"] = $score_threshold;
+        }
         return $this->createGroupCondition($field, 'WAND', $term, $logical_operator, $wand_option);
     }
 
     private function createWeakAnd(array $tokens, string $field = 'default', int $target_num_hits = null, int $score_threshold = null, $logical_operator = 'AND')
     {
         $weakand_option = [];
-        if ($target_num_hits !== null) $wand_option["targetNumHits"] = $target_num_hits;
-        if ($score_threshold !== null) $wand_option["scoreThreshold"] = $score_threshold;
+        if ($target_num_hits !== null) {
+            $wand_option["targetNumHits"] = $target_num_hits;
+        }
+        if ($score_threshold !== null) {
+            $wand_option["scoreThreshold"] = $score_threshold;
+        }
         $term = "(" . implode(", ", $tokens) . ")";
         $this->createGroupCondition($field, 'WEAKAND', $term, $logical_operator, $weakand_option);
         return $this;
@@ -493,7 +511,9 @@ class VespaYQLBuilder
     private function getLastGroupName()
     {
         $size = count($this->last_group);
-        if ($size > 0) return array_keys($this->last_group)[$size - 1];
+        if ($size > 0) {
+            return array_keys($this->last_group)[$size - 1];
+        }
         return 0;
     }
 
@@ -546,8 +566,12 @@ class VespaYQLBuilder
 
         for ($i = 0; $i < count($arr); $i++) {
             for ($j = $i + 1; $j < count($arr); $j++) {
-                if (!isset($arr_c[$arr[$i]])) $arr_c[$arr[$i]] = [];
-                if (!isset($arr_c[$arr[$j]])) $arr_c[$arr[$j]] = [];
+                if (!isset($arr_c[$arr[$i]])) {
+                    $arr_c[$arr[$i]] = [];
+                }
+                if (!isset($arr_c[$arr[$j]])) {
+                    $arr_c[$arr[$j]] = [];
+                }
 
                 if (!in_array($arr[$j], $arr_c[$arr[$i]])) {
                     $arr_c[$arr[$i]][] = $arr[$j];

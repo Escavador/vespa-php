@@ -18,7 +18,10 @@ use Illuminate\Queue\SerializesModels;
 
 class DeleteDocumentJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     protected $model_class;
     protected $document_ids;

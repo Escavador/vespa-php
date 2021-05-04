@@ -2,10 +2,8 @@
 
 namespace Escavador\Vespa\Models;
 
-
 use Escavador\Vespa\Common\VespaExceptionSubject;
 use Escavador\Vespa\Exception\VespaException;
-
 
 class DocumentDefinition
 {
@@ -83,8 +81,9 @@ class DocumentDefinition
 
     public static function hasNamespace($namespace, $definitions = null)
     {
-        if ($definitions == null)
+        if ($definitions == null) {
             $definitions = DocumentDefinition::loadDefinition();
+        }
 
         foreach ($definitions as $definition) {
             if ($definition->getDocumentNamespace() == $namespace) {
@@ -97,8 +96,9 @@ class DocumentDefinition
 
     public static function findNamespace($namespace = null, $definitions = null)
     {
-        if ($definitions == null)
+        if ($definitions == null) {
             $definitions = DocumentDefinition::loadDefinition();
+        }
 
         $filtred_definitions = [];
 
@@ -107,8 +107,9 @@ class DocumentDefinition
                 continue;
             }
 
-            if ($definition->getDocumentNamespace() == $namespace)
+            if ($definition->getDocumentNamespace() == $namespace) {
                 $filtred_definitions[] = $definition;
+            }
         }
 
         return $filtred_definitions;
@@ -116,8 +117,9 @@ class DocumentDefinition
 
     public static function findDefinitionByClass(string $model_class, $namespace = null, $definitions = null)
     {
-        if ($definitions == null)
+        if ($definitions == null) {
             $definitions = DocumentDefinition::loadDefinition();
+        }
 
         foreach ($definitions as $definition) {
             if ($namespace && $definition->getDocumentNamespace() != $namespace) {
@@ -127,8 +129,9 @@ class DocumentDefinition
                 if ($definition->getDocumentNamespace() == $namespace && $definition->getModelClass() == $model_class) {
                     return $definition;
                 }
-            } else if ($definition->getModelClass() == $model_class)
+            } elseif ($definition->getModelClass() == $model_class) {
                 return $definition;
+            }
         }
 
         return null;
@@ -136,8 +139,9 @@ class DocumentDefinition
 
     public static function findDefinition($document_type, $namespace = null, $definitions = null)
     {
-        if ($definitions == null)
+        if ($definitions == null) {
             $definitions = DocumentDefinition::loadDefinition();
+        }
 
         foreach ($definitions as $definition) {
             if ($namespace && $definition->getDocumentNamespace() != $namespace) {
@@ -147,8 +151,9 @@ class DocumentDefinition
                 if ($definition->getDocumentNamespace() == $namespace && $definition->getDocumentType() == $document_type) {
                     return $definition;
                 }
-            } else if ($definition->getDocumentType() == $document_type)
+            } elseif ($definition->getDocumentType() == $document_type) {
                 return $definition;
+            }
         }
 
         return null;

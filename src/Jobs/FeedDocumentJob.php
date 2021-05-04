@@ -8,7 +8,6 @@ use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Common\VespaExceptionSubject;
 use Escavador\Vespa\Exception\VespaFeedException;
 use Escavador\Vespa\Models\DocumentDefinition;
-use GuzzleHttp\Client;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -19,7 +18,10 @@ use Illuminate\Support\Facades\Redis;
 
 class FeedDocumentJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     protected $model_class;
     protected $document_ids;

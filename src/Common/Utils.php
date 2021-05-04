@@ -11,10 +11,11 @@ class Utils
     public static function vespaHost()
     {
         $host = trim(config('vespa.host'));
-        if (strpos($host, 'http://') !== 0 && strpos($host, 'https://') !== 0)
+        if (strpos($host, 'http://') !== 0 && strpos($host, 'https://') !== 0) {
             $host = 'http://' . $host;
+        }
 
-        if (filter_var($host, FILTER_VALIDATE_URL) === FALSE) {
+        if (filter_var($host, FILTER_VALIDATE_URL) === false) {
             $e = new VespaInvalidHostException();
             VespaExceptionSubject::notifyObservers($e);
             throw $e;
@@ -38,7 +39,7 @@ class Utils
     public static function defaultVespaClient(): AbstractClient
     {
         $default_client = config('vespa.default.client', VespaRESTClient::class);
-        return new $default_client;
+        return new $default_client();
     }
 
     public static function removeQuotes(string $text): string
