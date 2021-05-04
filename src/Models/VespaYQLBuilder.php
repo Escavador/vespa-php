@@ -45,9 +45,8 @@ class VespaYQLBuilder
         if(isset($this->last_group['conditions'])) {
             // If the group has "conditions" key, it's a subgroup in a group
             $this->last_group = &$this->createGroup($this->last_group['conditions']);
-        }
-        else {
-            $this->last_group = &$this->createGroup($this->last_group); // create a new group and refresh the last group
+        } else {
+            $this->last_group = &$this->createGroup($this->last_group);
         }
 
         $closure($this); // execute function with more clause in new group
@@ -268,8 +267,8 @@ class VespaYQLBuilder
 
     public function __toString()
     {
-        $limit = isset($this->limit) ? $this->limit : null;
-        $offset = isset($this->offset) ? $this->offset : null;
+        $limit = $this->limit ?? null;
+        $offset = $this->offset ?? null;
         $fields = isset($this->fields) ? implode(', ', $this->fields) : '*';
         $sources = '';
         if (!isset($this->sources) || count($this->sources) === 0) {
@@ -307,7 +306,6 @@ class VespaYQLBuilder
             });
         }
 
-        $search_condition_groups = $this->search_condition_groups;
         $yql = "SELECT $fields FROM $sources ";
         if (!empty($this->search_condition_groups)) {
             $yql .= " WHERE ";
@@ -340,7 +338,7 @@ class VespaYQLBuilder
             }
 
             $search_condition = $search_conditions['condition'];
-            $logical_operator = isset($search_conditions['logical_operator']) ? $search_conditions['logical_operator'] : null;
+            $logical_operator = $search_conditions['logical_operator'] ?? null;
 
             if ($logical_operator !== null) {
                 if (!$has_condition && $is_first_condition) {
@@ -365,11 +363,10 @@ class VespaYQLBuilder
                 }
             }
 
-
-            $operator = isset($search_condition[2])? $search_condition[2] : null;
+            $operator = $search_condition[2] ?? null;
             switch (strtoupper($operator)) {
                 case "CONTAINS":
-                    $condition = "{$search_condition[0]} {$search_condition[2]} ({$search_condition[1]} {$search_condition[3]})";
+                    $condition = $this->formatContainsCondition($search_condition);
                     break;
                 case "PHRASE":
                     $condition = $this->formatPhraseCondition($search_condition);
@@ -416,6 +413,11 @@ class VespaYQLBuilder
     {
         // TODO Implement
         return "";
+    }
+
+    private function formatContainsCondition(array $condition): string
+    {
+        return "{$condition[0]} {$condition[2]} ({$condition[1]} {$condition[3]})";
     }
 
     private function formatNearCondition(array $condition): string
@@ -629,4 +631,8 @@ class VespaYQLBuilder
     protected $last_group;
     protected $search_condition_groups;
     protected $document_type;
+    protected $limit;
+    protected $offset;
+    protected $used_document_type;
+    protected $orderBy;
 }
