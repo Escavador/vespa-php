@@ -11,6 +11,10 @@ RUN composer install
 
 FROM php:7.3-fpm
 
+WORKDIR /var/www
+
+SHELL ["/bin/bash", "-c"]
+
 RUN apt update \
     && rm /etc/apt/preferences.d/no-debian-php \
     && apt update -yqq \
@@ -33,8 +37,8 @@ COPY ./docker/codestyle.sh /usr/local/bin/codestyle
 
 RUN chmod +x /usr/local/bin/codestyle
 
-# Install composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+# Coloca o código do projeto na imagem
+COPY --chown=www-data . /var/www
 
 COPY --from=composer /build/vendor .
 

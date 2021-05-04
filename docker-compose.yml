@@ -6,7 +6,7 @@ services:
     build:
       context: ./
       dockerfile: docker/Dockerfile
-    working_dir: /vespa-php
+    working_dir: /var/www
     entrypoint: /usr/local/bin/run-server
     volumes:
       - ./:/vespa-php:cached
