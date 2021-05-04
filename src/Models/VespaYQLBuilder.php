@@ -468,8 +468,8 @@ class VespaYQLBuilder
 
         // If $group is the root group, is not necessary put logical_operator in the beginning
         if ($root_group_reference === $group) {
-            // Removes the logical operator from conditions because it is the first in the group
-            if (empty($root_group_reference)) {
+            // Removes the logical operator  (except NOT operator) from conditions because it is the first in the group
+            if (empty($root_group_reference) && $logical_operator != "AND!") {
                 unset($clause['logical_operator']);
             }
 
