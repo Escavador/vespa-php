@@ -324,6 +324,12 @@ class VespaYQLBuilder
         $yql = "";
         $is_first_condition = true;
         foreach ($search_condition_groups as $search_conditions) {
+            // If the user has opened a group without placing conditions
+            if (empty($search_conditions)) {
+                continue;
+            }
+
+            // If $search_conditions is a group of conditions
             if (isset($search_conditions["conditions"])) {
                 if (isset($search_conditions['logical_operator'])) {
                     if($search_conditions['logical_operator'] == "AND!" && !$has_condition) {
