@@ -10,7 +10,7 @@ class VespaYQLBuilder
     public function __construct()
     {
         $this->search_condition_groups = [];
-        $this->last_group = &$this->createGroup($this->search_condition_groups);
+        $this->current_group = &$this->createGroup($this->search_condition_groups);
         $this->document_type = [];
         $this->used_document_type = [];
     }
@@ -39,18 +39,18 @@ class VespaYQLBuilder
 
     public function addConditionGroup(\Closure $closure): VespaYQLBuilder
     {
-        $last_group = &$this->last_group; // save the last group
+        $current_group = &$this->current_group; // save the last group
 
         // create a new group and refresh the last group
-        if(isset($this->last_group['conditions'])) {
+        if(isset($this->current_group['conditions'])) {
             // If the group has "conditions" key, it's a subgroup in a group
-            $this->last_group = &$this->createGroup($this->last_group['conditions']);
+            $this->current_group = &$this->createGroup($this->current_group['conditions']);
         } else {
-            $this->last_group = &$this->createGroup($this->last_group);
+            $this->current_group = &$this->createGroup($this->current_group);
         }
 
         $closure($this); // execute function with more clause in new group
-        $this->last_group = &$last_group; // put the old last group back
+        $this->current_group = &$current_group; // put the old last group back
         return $this;
     }
 
@@ -468,7 +468,7 @@ class VespaYQLBuilder
             $logical_operator = "AND!";
         }
 
-        $group = &$this->last_group;
+        $group = &$this->current_group;
         $clause = ['logical_operator' => $logical_operator, 'condition' => $condition];
         $root_group_reference = &$this->search_condition_groups[0];
 
@@ -503,13 +503,6 @@ class VespaYQLBuilder
         $group[$group_name] = [];
         $new_group = &$group[$group_name];
         return $new_group;
-    }
-
-    private function getLastGroupName()
-    {
-        $size = count($this->last_group);
-        if ($size > 0) return array_keys($this->last_group)[$size - 1];
-        return 0;
     }
 
     private function removeSQLInjection(string $text): string
@@ -634,7 +627,7 @@ class VespaYQLBuilder
         return true;
     }
 
-    protected $last_group;
+    protected $current_group;
     protected $search_condition_groups;
     protected $document_type;
     protected $limit;
