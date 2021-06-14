@@ -6,12 +6,14 @@ use Carbon\Carbon;
 use Escavador\Vespa\Common\LogManager;
 use Escavador\Vespa\Common\Utils;
 use Escavador\Vespa\Common\VespaExceptionSubject;
+use Escavador\Vespa\Enum\LogManagerOptionsEnum;
 use Escavador\Vespa\Exception\VespaFeedException;
 use Escavador\Vespa\Models\DocumentDefinition;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Queue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
@@ -59,7 +61,7 @@ class FeedDocumentJob implements ShouldQueue
 
         try {
             if (count($documents) == 0) {
-                $this->logger->log("[$this->model]: No documents to be indexed were returned", "info");
+                $this->logger->log("[$this->model]: No documents to be indexed were returned", LogManagerOptionsEnum::INFO);
                 throw new VespaFeedException($this->model, null, "It was not possible to index any document to the Vespa.");
             }
 
@@ -96,12 +98,22 @@ class FeedDocumentJob implements ShouldQueue
                     $this->model_class::markAsVespaNotIndexed($chunk);
                 }
             }
-            $e = new VespaFeedException($this->model, $ex);
-            VespaExceptionSubject::notifyObservers($e);
-            throw $e;
+
+            throw $ex;
         }
         $total_duration = Carbon::now()->diffInSeconds($start_time);
-        $this->logger->log("[$this->model]: Vespa was fed in " . gmdate('H:i:s:m', $total_duration), "info");
-        $this->logger->log("[$this->model]: $count_indexed of " . count($documents) . " were indexed in Vespa.", "debug");
+        $this->logger->log("[$this->model]: Vespa was fed in " . gmdate('H:i:s:m', $total_duration), LogManagerOptionsEnum::INFO);
+        $this->logger->log("[$this->model]: $count_indexed of " . count($documents) . " were indexed in Vespa.", LogManagerOptionsEnum::DEBUG);
+    }
+
+     /**
+     * The job failed to process.
+     *
+     * @param  \Exception  $exception
+     * @return void
+     */
+    public function failed(\Exception $exception = null)
+    {
+        VespaExceptionSubject::notifyObservers(new VespaFeedException($this->model, $exception));
     }
 }
