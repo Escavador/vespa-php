@@ -11,7 +11,8 @@ class VespaFailGetDocumentException extends VespaException
 
     public function __construct(DocumentDefinition $definition, string $scheme, \Exception $exception)
     {
-        $previous_message = " {$exception->getMessage()}" ?? "";
+        $previous_message = $exception ? " {$exception->getMessage()}" : "";
+
         parent::__construct("[{$definition->getDocumentType()}]: An error occurred while getting the document to the scheme: $scheme.$previous_message", $exception);
 
         $this->code = $exception->getCode();

@@ -9,7 +9,8 @@ class VespaFailDeleteDocumentException extends VespaException
 
     public function __construct($definition, string $scheme, \Exception $exception = null)
     {
-        $previous_message = " {$exception->getMessage()}" ?? "";
+        $previous_message = $exception ? " {$exception->getMessage()}" : "";
+
         parent::__construct("[{$definition->getDocumentType()}]: An error occurred while deleting the document to the scheme : $scheme.$previous_message", $exception);
 
         $this->code = 100;

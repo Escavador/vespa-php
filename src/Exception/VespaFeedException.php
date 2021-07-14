@@ -8,7 +8,8 @@ class VespaFeedException extends VespaException
 
     public function __construct(string $model, \Exception $exception = null, string $message = null)
     {
-        $previous_message = "\n{$exception->getMessage()}" ?? "";
+        $previous_message = $exception ? "\n{$exception->getMessage()}" : "";
+
         if (!$message) {
             parent::__construct("[{$model}] Feed process failed.$previous_message", $exception);
         } else {
