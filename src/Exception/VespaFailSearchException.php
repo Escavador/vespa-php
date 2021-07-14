@@ -8,7 +8,9 @@ class VespaFailSearchException extends VespaException
 
     public function __construct(array $data, \Exception $exception = null)
     {
-        parent::__construct("An error occurred while performing the search on Vespa. Payload: " . json_encode($data), $exception);
+        $previous_message = $exception ? "\n{$exception->getMessage()}" : "";
+
+        parent::__construct("An error occurred while performing the search on Vespa. Payload: " . json_encode($data) . $previous_message, $exception);
 
         $this->code = 300;
         $this->payload = $data;
