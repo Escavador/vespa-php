@@ -9,10 +9,12 @@ class VespaExecuteJobException extends VespaException
 
     public function __construct(string $job_class, string $document_type, \Exception $exception = null, string $message = null)
     {
+        $previous_message = "\n{$exception->getMessage()}" ?? "";
+
         if (!$message) {
-            parent::__construct("[{$document_type}] The job $job_class process failed", $exception);
+            parent::__construct("[{$document_type}] The job $job_class process failed.$previous_message", $exception);
         } else {
-            parent::__construct("[{$document_type}] $job_class - $message", $exception);
+            parent::__construct("[{$document_type}] $job_class - $message$previous_message", $exception);
         }
 
         $this->code = 600;

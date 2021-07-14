@@ -6,6 +6,7 @@ class VespaInvalidYQLQueryException extends VespaException
 {
     public function __construct($message = null, \Exception $exception = null)
     {
+        $previous_message = "\n{$exception->getMessage()}" ?? "";
         if ($message != null) {
             $message = " $message";
         }

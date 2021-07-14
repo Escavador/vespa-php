@@ -12,7 +12,8 @@ class VespaFailUpdateDocumentException extends VespaException
 
     public function __construct(DocumentDefinition $definition, AbstractDocument $document, \Exception $exception = null)
     {
-        parent::__construct("[{$definition->getDocumentType()}]: Document {$document->getVespaDocumentId()} was not updated to Vespa.", $exception);
+        $previous_message = " {$exception->getMessage()}" ?? "";
+        parent::__construct("[{$definition->getDocumentType()}]: Document {$document->getVespaDocumentId()} was not updated to Vespa.$previous_message", $exception);
 
         $this->code = 500;
         $this->document = $document;
