@@ -288,9 +288,12 @@ class FeedCommand extends Command
 
     private function processAsync($model_definition, $model_class, $model, $queue = null)
     {
+        $all_document_ids = $model_class::getVespaDocumentIdsToIndex($this->limit);
+
         $items = $this->limit;
         $total_scheduled = 0;
         $total_documents = 0;
+
         while ($items > 0) {
             if ($items >= $this->bulk) {
                 $items -= $this->bulk;
@@ -300,7 +303,8 @@ class FeedCommand extends Command
                 $items = 0;
             }
 
-            $document_ids = $model_class::getVespaDocumentIdsToIndex($requested_documents);
+            $document_ids = array_splice($all_document_ids, 0, $requested_documents);
+
             $count_docs = count($document_ids);
 
             if ($document_ids !== null && $count_docs <= 0) {
