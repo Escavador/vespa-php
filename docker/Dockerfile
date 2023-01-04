@@ -1,4 +1,4 @@
-FROM php:7.3-fpm AS composer
+FROM php:8.2-fpm AS composer
 
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -11,14 +11,17 @@ RUN apt update \
     && rm /etc/apt/preferences.d/no-debian-php \
     && apt update -yqq \
     && apt install -y --force-yes --no-install-recommends \
-    build-essential \
-    curl \
-    git \
-    locales
+      build-essential \
+      curl \
+      git \
+      locales \
+      libzip-dev \
+      zip \
+    && docker-php-ext-install zip
 
-RUN composer install
+RUN composer update
 
-FROM php:7.3-fpm
+FROM php:8.2-fpm
 
 WORKDIR /var/www
 
