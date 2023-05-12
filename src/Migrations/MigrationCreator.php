@@ -38,7 +38,7 @@ class MigrationCreator extends IlluminateMigrationCreator
      * @param string $table
      * @return string
      */
-    protected function populateStub($stub, $table)
+    protected function populateStub($name, $stub, $table)
     {
         $stub = str_replace('DummyTable', $table, $stub);
         $stub = str_replace('DummyColumnNameStatus', config('vespa.model_columns.status', ''), $stub);
