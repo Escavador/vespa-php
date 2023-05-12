@@ -34,12 +34,14 @@ class MigrationCreator extends IlluminateMigrationCreator
     /**
      * Populate the place-holders in the migration stub.
      *
+     * @param string $name
      * @param string $stub
      * @param string $table
      * @return string
      */
-    protected function populateStub($stub, $table)
+    protected function populateStub($name, $stub, $table)
     {
+        $stub = str_replace('DummyClass', $this->getClassName($name), $stub);
         $stub = str_replace('DummyTable', $table, $stub);
         $stub = str_replace('DummyColumnNameStatus', config('vespa.model_columns.status', ''), $stub);
         $stub = str_replace('DummyColumnNameDate', config('vespa.model_columns.date', ''), $stub);
