@@ -99,7 +99,8 @@ class FeedDocumentJob implements ShouldQueue
                 }
             }
 
-            throw $ex;
+            $this->fail($ex);
+            return;
         }
         $total_duration = Carbon::now()->diffInSeconds($start_time);
         $this->logger->log("[$this->model]: Vespa was fed in " . gmdate('H:i:s:m', $total_duration), LogManagerOptionsEnum::INFO);

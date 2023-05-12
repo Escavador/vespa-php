@@ -96,7 +96,8 @@ class UpdateDocumentJob implements ShouldQueue
 
             $e = new VespaFeedException($this->document_type, $ex);
             VespaExceptionSubject::notifyObservers($e);
-            throw $e;
+            $this->fail($e);
+            return;
         }
         $total_duration = Carbon::now()->diffInSeconds($start_time);
         $this->logger->log("[$this->document_type]: " . class_basename(self::class) . " was fed in " . gmdate('H:i:s:m', $total_duration), "info");
