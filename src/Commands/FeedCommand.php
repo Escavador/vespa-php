@@ -211,7 +211,7 @@ class FeedCommand extends Command
         );
     }
 
-    protected function message($type = 'debug', $text)
+    protected function message($type = 'debug', $text = '')
     {
         if (!app()->environment('production')) {
             switch ($type) {
