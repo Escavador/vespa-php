@@ -6,7 +6,7 @@ class VespaFailSearchException extends VespaException
 {
     protected $payload;
 
-    public function __construct(array $data, \Exception $exception = null)
+    public function __construct(array $data, ?\Exception $exception = null)
     {
         $previous_message = $exception ? "\n{$exception->getMessage()}" : "";
 

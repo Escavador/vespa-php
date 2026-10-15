@@ -34,7 +34,7 @@ class VespaRESTClient extends AbstractClient
     protected $max_concurrency;
     protected $max_parallel_requests;
 
-    public function __construct(array $headers = null)
+    public function __construct(?array $headers = null)
     {
         parent::__construct();
         $this->client = new Client();

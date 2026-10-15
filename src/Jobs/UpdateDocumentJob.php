@@ -33,7 +33,7 @@ class UpdateDocumentJob implements ShouldQueue
     protected $update_chunk_size;
     protected $update_model_database;
 
-    public function __construct(string $operation, DocumentDefinition $model_definition, array $document_ids, bool $update_model_database = true, AbstractClient $client = null, string $queue = null)
+    public function __construct(string $operation, DocumentDefinition $model_definition, array $document_ids, bool $update_model_database = true, ?AbstractClient $client = null, ?string $queue = null)
     {
         $this->update_model_database = $update_model_database;
         $this->model_definition = $model_definition;

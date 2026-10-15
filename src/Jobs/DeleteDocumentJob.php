@@ -33,7 +33,7 @@ class DeleteDocumentJob implements ShouldQueue
     protected $update_chunk_size;
     protected $update_model_database;
 
-    public function __construct(DocumentDefinition $model_definition, array $document_ids, bool $update_model_database = true, string $queue = null)
+    public function __construct(DocumentDefinition $model_definition, array $document_ids, bool $update_model_database = true, ?string $queue = null)
     {
         $this->model_definition = $model_definition;
         $this->model_class = $model_definition->getModelClass();

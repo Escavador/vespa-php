@@ -6,7 +6,7 @@ class VespaFeedException extends VespaException
 {
     protected $model;
 
-    public function __construct(string $model, \Exception $exception = null, string $message = null)
+    public function __construct(string $model, ?\Exception $exception = null, ?string $message = null)
     {
         $previous_message = $exception ? "\n{$exception->getMessage()}" : "";
 

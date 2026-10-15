@@ -7,7 +7,7 @@ class VespaFailDeleteDocumentException extends VespaException
     protected $definition;
     protected $scheme;
 
-    public function __construct($definition, string $scheme, \Exception $exception = null)
+    public function __construct($definition, string $scheme, ?\Exception $exception = null)
     {
         $previous_message = $exception ? " {$exception->getMessage()}" : "";
 
