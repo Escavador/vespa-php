@@ -19,7 +19,7 @@ interface AbstractDocument
 
     public static function instanceByVespaChildResponse(AbstractChild $child): AbstractDocument;
 
-    public static function getVespaDocumentsToIndex(int $limit, array $document_ids = null);
+    public static function getVespaDocumentsToIndex(int $limit, ?array $document_ids = null);
 
     public static function getVespaDocumentIdsToIndex(int $limit);
 }

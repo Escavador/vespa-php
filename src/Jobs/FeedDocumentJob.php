@@ -33,7 +33,7 @@ class FeedDocumentJob implements ShouldQueue
     protected $logger;
     protected $update_chunk_size;
 
-    public function __construct(DocumentDefinition $model_definition, string $model_class, $model, array $document_ids, string $queue = null)
+    public function __construct(DocumentDefinition $model_definition, string $model_class, $model, array $document_ids, ?string $queue = null)
     {
         $this->model_definition = $model_definition;
         $this->model_class = $model_class;
@@ -113,7 +113,7 @@ class FeedDocumentJob implements ShouldQueue
      * @param  \Exception  $exception
      * @return void
      */
-    public function failed(\Exception $exception = null)
+    public function failed(?\Exception $exception = null)
     {
         VespaExceptionSubject::notifyObservers(new VespaFeedException($this->model, $exception));
     }

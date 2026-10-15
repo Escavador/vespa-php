@@ -4,7 +4,7 @@ namespace Escavador\Vespa\Exception;
 
 class VespaException extends \Exception
 {
-    public function __construct($message, \Exception $exception = null)
+    public function __construct($message, ?\Exception $exception = null)
     {
         $previous_message = $exception ? "\n{$exception->getMessage()}" : "";
 

@@ -10,7 +10,7 @@ class VespaFailUpdateDocumentException extends VespaException
     protected $document;
     protected $definition;
 
-    public function __construct(DocumentDefinition $definition, AbstractDocument $document, \Exception $exception = null)
+    public function __construct(DocumentDefinition $definition, AbstractDocument $document, ?\Exception $exception = null)
     {
         $previous_message = $exception ? " {$exception->getMessage()}" : "";
 

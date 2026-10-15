@@ -69,7 +69,7 @@ class VespaYQLBuilder
         return $this;
     }
 
-    public function addWandCondition(string $term, string $field = 'default', $logical_operator = 'AND', int $target_num_hits = null, float $score_threshold = null, \Closure $weight_tokens = null): VespaYQLBuilder
+    public function addWandCondition(string $term, string $field = 'default', $logical_operator = 'AND', ?int $target_num_hits = null, ?float $score_threshold = null, ?\Closure $weight_tokens = null): VespaYQLBuilder
     {
         [$tokens, $not_tokens] = $this->tokenizeTerm($term, true);
         $tokens = $this->generateWeightedTokens($tokens);
@@ -87,7 +87,7 @@ class VespaYQLBuilder
         return $this;
     }
 
-    public function addWeakAndCondition(array $tokens, string $field = 'default', $logical_operator = 'AND', int $target_num_hits = null, int $score_threshold = null): VespaYQLBuilder
+    public function addWeakAndCondition(array $tokens, string $field = 'default', $logical_operator = 'AND', ?int $target_num_hits = null, ?int $score_threshold = null): VespaYQLBuilder
     {
         $parsed_tokens = [];
         foreach ($tokens as $token) {
@@ -431,7 +431,7 @@ class VespaYQLBuilder
         return "({$condition[0]} contains ({$condition[1]} {$condition[2]} (\"" . implode("\", \"", $condition[3]) . "\")))";
     }
 
-    private function createWand(array $term, string $field = 'default', int $target_num_hits = null, float $score_threshold = null, $logical_operator = 'AND'): VespaYQLBuilder
+    private function createWand(array $term, string $field = 'default', ?int $target_num_hits = null, ?float $score_threshold = null, $logical_operator = 'AND'): VespaYQLBuilder
     {
         $wand_option = [];
         if ($target_num_hits !== null) $wand_option["targetNumHits"] = $target_num_hits;
@@ -439,7 +439,7 @@ class VespaYQLBuilder
         return $this->createGroupCondition($field, 'WAND', $term, $logical_operator, $wand_option);
     }
 
-    private function createWeakAnd(array $tokens, string $field = 'default', int $target_num_hits = null, int $score_threshold = null, $logical_operator = 'AND')
+    private function createWeakAnd(array $tokens, string $field = 'default', ?int $target_num_hits = null, ?int $score_threshold = null, $logical_operator = 'AND')
     {
         $weakand_option = [];
         if ($target_num_hits !== null) $wand_option["targetNumHits"] = $target_num_hits;
@@ -449,7 +449,7 @@ class VespaYQLBuilder
         return $this;
     }
 
-    private function createGroupCondition(string $field, string $operator, $term, $logical_operator, array $operator_options = null, $allowed_operators = null)
+    private function createGroupCondition(string $field, string $operator, $term, $logical_operator, ?array $operator_options = null, $allowed_operators = null)
     {
         $parsed_operator_options = "";
         if ($operator_options !== null) {
@@ -580,7 +580,7 @@ class VespaYQLBuilder
         return $weighted_tokens;
     }
 
-    private function validateCommonRules($tokens, $operator, $logical_operator, array $allowed_operators = null): bool
+    private function validateCommonRules($tokens, $operator, $logical_operator, ?array $allowed_operators = null): bool
     {
         $this->validateToken($tokens);
 
@@ -591,7 +591,7 @@ class VespaYQLBuilder
         return true;
     }
 
-    private function validateOperator($operator, array $allowed_operators = null): bool
+    private function validateOperator($operator, ?array $allowed_operators = null): bool
     {
         if ($allowed_operators == null || count($allowed_operators) == 0) {
             $allowed_operators = ["CONTAINS", "PHRASE", "MATCHES", "=", "NEAR", "ONEAR", "WAND", "WEAKAND", "EQUIV",
